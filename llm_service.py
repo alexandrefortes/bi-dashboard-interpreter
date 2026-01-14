@@ -1,0 +1,154 @@
+import json
+import logging
+import re
+from google import genai
+from google.genai import types
+from config import GEMINI_API_KEY, MODEL_SCOUT, MODEL_ANALYST
+
+
+logger = logging.getLogger("Cataloger")
+
+class GeminiService:
+    def __init__(self):
+        if not GEMINI_API_KEY:
+            raise ValueError("GEMINI_API_KEY não encontrada nas variáveis de ambiente.")
+        
+        self.client = genai.Client(api_key=GEMINI_API_KEY)
+
+    def _call_gemini(self, model_name, prompt_text, image_bytes, response_schema=None):
+        """Método genérico para chamar a API nova do Google GenAI."""
+        try:
+            image_part = types.Part.from_bytes(
+                data=image_bytes,
+                mime_type="image/png"
+            )
+            
+            text_part = types.Part.from_text(text=prompt_text)
+            
+            contents = [
+                types.Content(
+                    role="user",
+                    parts=[text_part, image_part]
+                )
+            ]
+
+            # Configuração de geração
+            generate_config = types.GenerateContentConfig(
+                response_mime_type="application/json" if response_schema else "text/plain",
+                response_schema=response_schema
+            )
+
+            response = self.client.models.generate_content(
+                model=model_name,
+                contents=contents,
+                config=generate_config
+            )
+
+            return response.text
+
+        except Exception as e:
+            logger.error(f"Erro na chamada LLM ({model_name}): {e}")
+            return None
+
+    def discover_navigation(self, image_bytes):
+        """Estágio B: Identifica elementos de navegação com prioridade para paginação nativa."""
+        prompt = """
+        Analise esta captura de tela de um relatório Power BI.
+        Sua missão é identificar O PRINCIPAL método de navegação para acessar as diferentes páginas do relatório.
+
+        Prioridade de Identificação (em ordem):
+        1. **Rodapé Nativo (Native Footer)**: Procure na parte INFERIOR por uma barra cinza estreita contendo texto como "1 of X", "1 de 4" ou setas de navegação (< >). 
+           - Se existir, esse é o "nav_type": "native_footer".
+           - O "target" deve ser APENAS a seta de "Próxima Página" (>).
+
+        2. **Abas de Conteúdo (Custom Tabs)**: Se NÃO houver rodapé nativo, procure por botões ou abas desenhados dentro do relatório (topo ou lateral) que pareçam trocar a visão inteira.
+           - Tipos: "top_tabs", "left_list", "bottom_tabs".
+           - Os "targets" são as coordenadas centrais de cada aba visível.
+
+        Ignore filtros, slicers de data ou botões de "Voltar".
+
+        Retorne estritamente JSON:
+        {
+            "nav_type": "native_footer" | "top_tabs" | "left_list" | "none",
+            "page_count_visual": "Texto exato visto indicando contagem (ex: '1 of 4') ou null",
+            "targets": [
+                {"label": "Next Page Button" ou "Nome da Aba", "x": 0.0, "y": 0.0}
+            ]
+        }
+        """
+        
+        json_text = self._call_gemini(
+            MODEL_SCOUT, 
+            prompt, 
+            image_bytes, 
+            response_schema=None
+        )
+        
+        if not json_text:
+            return {"nav_type": "none", "targets": []}
+
+        try:
+            cleaned_text = re.sub(r"```json\s*|\s*```", "", json_text).strip()
+            data = json.loads(cleaned_text)
+            
+            # Se o modelo devolveu pixels (ex: > 1), normaliza na marra assumindo 1920x1080
+            # ou apenas confia se estiver entre 0 e 1.
+            for target in data.get("targets", []):
+                if target['x'] > 1: target['x'] = target['x'] / 1920
+                if target['y'] > 1: target['y'] = target['y'] / 1080
+                
+            return data
+
+        except json.JSONDecodeError:
+            logger.error(f"Falha ao decodificar JSON do Scout. Recebido: {json_text}")
+            return {"nav_type": "none", "targets": []}
+
+    def analyze_page(self, image_bytes):
+        """Estágio D: Documentação Funcional (Abstrata e Atemporal)."""
+        prompt = """
+        Atue como um Arquiteto de BI responsável por catalogar ativos de dados da empresa.
+        Sua tarefa é descrever a FUNCIONALIDADE e o PROPÓSITO deste dashboard para um catálogo de governança.
+        
+        REGRAS CRÍTICAS:
+        1. NÃO extraia números específicos, datas exatas ou valores visíveis (ex: não diga "O score é 50", diga "Exibe o score atual").
+        2. NÃO tire insights do momento (ex: não diga "A venda caiu", diga "Permite analisar tendência de vendas").
+        3. A descrição deve ser válida hoje, mês que vem ou ano que vem, independente dos dados mudarem.
+        
+        Analise a imagem e gere um JSON estrito com:
+        
+        {
+          "titulo_painel": "Título oficial identificado no topo",
+          "objetivo_macro": "Para que serve este painel? (Ex: 'Monitoramento de performance operacional' ou 'Comparativo estratégico entre países')",
+          "perguntas_respondidas": [
+             "Liste 3 a 5 perguntas de negócio que um usuário consegue responder usando esta tela.",
+             "Ex: 'Quais países lideram o ranking no ano selecionado?'",
+             "Ex: 'Existe correlação entre PIB e a métrica de inovação?'",
+             "Ex: 'Qual a evolução histórica do indicador selecionado?'"
+          ],
+          "dominio_negocio": "Área funcional (ex: Financeiro, Vendas, RH, Logística, Marketing)",
+          "elementos_visuais": "Descreva a estrutura abstrata (Ex: 'Matriz de gráficos de barras comparativos por ano' ou 'Gráfico de dispersão (Scatter Plot) correlacionando duas variáveis com tamanho da bolha indicando população')",
+          "filtros_visiveis": ["Lista de filtros/slicers disponíveis"],
+          "principais_indicadores": ["Lista de métricas/KPIs visíveis (ex: Receita Total, Qtd Vendas)"],
+          "publico_sugerido": "Executivo, Analista de Mercado, Operacional ou Cientista de Dados"
+        }
+        
+        Use linguagem técnica de negócios em Português.
+        """
+        
+        json_text = self._call_gemini(
+            MODEL_ANALYST, 
+            prompt, 
+            image_bytes, 
+            response_schema=None
+        )
+
+        if not json_text:
+            return {"erro": "Falha na análise LLM"}
+
+        try:
+            import re
+            cleaned_text = re.sub(r"```json\s*|\s*```", "", json_text).strip()           
+            return json.loads(cleaned_text)
+        except json.JSONDecodeError:
+            logger.error(f"JSON Inválido no Analyst: {json_text}")
+            return {"erro": "JSON inválido retornado pelo LLM"}

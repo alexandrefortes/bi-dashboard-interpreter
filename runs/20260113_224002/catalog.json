@@ -1,0 +1,157 @@
+{
+  "run_id": "20260113_224002",
+  "url": "https://app.fabric.microsoft.com/view?r=eyJrIjoiNDJjZTYzNDMtNDc0Mi00NGI5LTljOTMtNGNmYjNjYWQxYTk0IiwidCI6ImQ4ZTFiMDVlLTcwYWEtNGVmNy1iODc4LTQ2NmI2ODhmOTUyZiJ9",
+  "timestamp": "2026-01-13T22:40:02.448336",
+  "pages": [
+    {
+      "id": 0,
+      "label": "Home",
+      "filename": "00_home.png",
+      "analysis": {
+        "titulo_painel": "FINANCIAL PERFORMANCE | SUMMARY",
+        "objetivo_macro": "Monitoramento da performance financeira e de vendas da empresa, com comparativos anuais e desdobramentos por múltiplas dimensões de negócio.",
+        "perguntas_respondidas": [
+          "Qual é o desempenho financeiro (vendas, custo, lucro) atual em comparação com o mesmo período do ano anterior?",
+          "Qual a tendência mensal das vendas e como ela se compara ao ano anterior?",
+          "Quais são os principais estados em termos de volume de vendas?",
+          "Como as vendas são distribuídas entre os diferentes segmentos de clientes, categorias de produtos e regiões?"
+        ],
+        "dominio_negocio": "Vendas e Finanças",
+        "elementos_visuais": "O painel é estruturado com uma seção de KPIs principais no topo, apresentados em cartões (scorecards) com minigráficos de tendência (sparklines). Abaixo, apresenta um gráfico de decomposição de vendas, um gráfico de barras horizontais para o ranking de vendas por localidade, um gráfico de colunas para a evolução mensal de vendas comparado ao ano anterior, e um mapa geográfico para a distribuição espacial do desempenho.",
+        "filtros_visiveis": [
+          "Year",
+          "Segment",
+          "Category",
+          "Region"
+        ],
+        "principais_indicadores": [
+          "Vendas (Sales)",
+          "Custo (Cost)",
+          "Lucro (Profit)",
+          "Quantidade de Pedidos (Order)",
+          "Variação vs Ano Anterior (vs LY)"
+        ],
+        "publico_sugerido": "Executivo, Analista de Vendas"
+      }
+    },
+    {
+      "id": 1,
+      "label": "Ir para Pág 2",
+      "filename": "01_target.png",
+      "analysis": {
+        "titulo_painel": "FINANCIAL PERFORMANCE | MARKET ANALYSIS",
+        "objetivo_macro": "Monitorar o desempenho financeiro e realizar análises de mercado, comparando resultados atuais com períodos anteriores e detalhando a performance por diferentes segmentos e clientes.",
+        "perguntas_respondidas": [
+          "Qual é o desempenho financeiro geral (vendas, custo, lucro) e sua variação em relação ao ano anterior?",
+          "Qual a tendência mensal de vendas e como ela se distribui pelos diferentes segmentos de mercado?",
+          "Quais segmentos e clientes são mais representativos para o volume de vendas da empresa?",
+          "Existe correlação entre o volume de vendas e a lucratividade por cliente?"
+        ],
+        "dominio_negocio": "Vendas e Finanças",
+        "elementos_visuais": "Composição de cartões de KPIs com indicadores de performance e comparação anual, um gráfico de colunas empilhadas para análise de série temporal por segmento, uma tabela detalhada com quebra de métricas e variação YoY, um ranking de clientes em gráfico de barras horizontais e um gráfico de dispersão para correlação entre vendas e lucro.",
+        "filtros_visiveis": [
+          "Year",
+          "Segment",
+          "Category",
+          "Region"
+        ],
+        "principais_indicadores": [
+          "Sales",
+          "Cost",
+          "Profit",
+          "Orders",
+          "Avg. Order",
+          "Variação vs Ano Anterior (YoY)",
+          "% do Total"
+        ],
+        "publico_sugerido": "Executivo, Analista de Mercado, Analista de Vendas"
+      }
+    },
+    {
+      "id": 2,
+      "label": "Ir para Pág 3",
+      "filename": "02_target.png",
+      "analysis": {
+        "titulo_painel": "FINANCIAL PERFORMANCE | PRODUCT ANALYSIS",
+        "objetivo_macro": "Analisar a performance financeira da empresa com foco específico no desempenho de produtos e suas categorias, permitindo a identificação de tendências e padrões de vendas, custo e lucratividade.",
+        "perguntas_respondidas": [
+          "Quais são os produtos e sub-categorias com maior representatividade em vendas?",
+          "Qual é a tendência mensal de vendas e como ela se compara com o mesmo período do ano anterior?",
+          "Existe uma correlação visível entre o volume de vendas e a lucratividade de um produto?",
+          "Qual a performance financeira (Vendas, Custo, Lucro) para um determinado segmento de cliente, categoria ou região?",
+          "Como os principais indicadores financeiros se comportam ao longo do tempo?"
+        ],
+        "dominio_negocio": "Vendas e Finanças",
+        "elementos_visuais": "O layout é composto por: uma seção de cartões de KPI (Key Performance Indicators) no topo; um gráfico combinado de linha e barras para análise de tendência temporal; um gráfico de barras horizontais para ranqueamento de produtos; uma matriz detalhando métricas por sub-categoria; e um gráfico de dispersão (Scatter Plot) para correlacionar indicadores financeiros.",
+        "filtros_visiveis": [
+          "Year (Ano)",
+          "Segment (Segmento)",
+          "Category (Categoria)",
+          "Region (Região)"
+        ],
+        "principais_indicadores": [
+          "Sales (Vendas)",
+          "Cost (Custo)",
+          "Profit (Lucro)",
+          "Orders (Pedidos)",
+          "Avg. Order (Ticket Médio por Pedido)"
+        ],
+        "publico_sugerido": "Analista de Negócios, Gerente de Produto, Analista de Vendas"
+      }
+    },
+    {
+      "id": 3,
+      "label": "Ir para Pág 4",
+      "filename": "03_target.png",
+      "analysis": {
+        "titulo_painel": "FINANCIAL PERFORMANCE | TRANSACTION",
+        "objetivo_macro": "Prover uma visão detalhada e granular das transações financeiras individuais, permitindo a auditoria e consulta de dados em nível de pedido.",
+        "perguntas_respondidas": [
+          "Quais são os detalhes (produto, cliente, valor, custo, lucro) de uma ordem de venda específica?",
+          "Qual a performance financeira de cada transação individual dentro de um determinado período, segmento ou região?",
+          "É possível listar todas as transações que resultaram em prejuízo para uma categoria de produto específica?",
+          "Quais foram as vendas, custos e quantidades associadas a um cliente ou pedido específico?",
+          "Como a margem de lucro se comporta em nível de cada linha de transação?"
+        ],
+        "dominio_negocio": "Financeiro / Vendas",
+        "elementos_visuais": "Tabela detalhada (matriz) exibindo dados transacionais em nível de linha, com indicadores de performance e atributos dimensionais por pedido. Inclui um indicador visual de status para a margem de lucro de cada transação.",
+        "filtros_visiveis": [
+          "Ano | Mês",
+          "Segmento",
+          "Categoria",
+          "Região",
+          "Busca por Order ID"
+        ],
+        "principais_indicadores": [
+          "Sales (Vendas)",
+          "Cost (Custo)",
+          "Quantity Sold (Quantidade Vendida)",
+          "Profit (Lucro)",
+          "Profit% (Margem de Lucro)"
+        ],
+        "publico_sugerido": "Analista de Negócios / Operacional"
+      }
+    }
+  ],
+  "navigation_structure": {
+    "nav_type": "native_footer",
+    "page_count_visual": "1 de 4",
+    "targets": [
+      {
+        "label": "Ir para Pág 2",
+        "x": 0.523,
+        "y": 0.986
+      },
+      {
+        "label": "Ir para Pág 3",
+        "x": 0.523,
+        "y": 0.986
+      },
+      {
+        "label": "Ir para Pág 4",
+        "x": 0.523,
+        "y": 0.986
+      }
+    ]
+  }
+}
