@@ -142,5 +142,3 @@ Verifique se o dashboard é muito pesado. Aumente o `asyncio.sleep` no `cataloge
 
 **Erros de "White Screen"?**
 O sistema possui detecção automática de tela branca (erros de renderização do Power BI). Se a imagem for >98% branca, ela é ignorada e logada como erro, sem quebrar o fluxo.
-
-```
