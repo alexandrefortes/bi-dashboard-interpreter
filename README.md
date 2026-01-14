@@ -1,5 +1,5 @@
 # bi-dashboard-interpreter
-A focused crawler for BI dashboards (UI-level, non-invasive).
+A focused crawler for BI dashboards (UI-level, non-invasive).  
 Este projeto utiliza IA Multimodal (Gemini 2.5) e Automação de Navegador (Playwright) para navegar, capturar e documentar funcionalmente painéis de Business Intelligence (Power BI, etc.) automaticamente.
 
 ## 🧱 Modularização
