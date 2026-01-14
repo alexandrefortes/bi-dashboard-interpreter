@@ -17,6 +17,13 @@ O código segue princípios de responsabilidade única:
 * **`bot_core.py`**: Camada de abstração do Playwright.
 * **`config.py`**: Centralização de constantes e ajustes finos.
 
+## 🧪 Dashboards de exemplo (para testes)
+
+* [Financial Performance Dashboard](https://community.fabric.microsoft.com/t5/Themes-Gallery/Financial-Performance-Dashboard/m-p/4901530), por Arbaz_Ahmad (Fabric Community Themes Gallery)
+* [Marketing Campaign Analysis Dashboard](https://community.fabric.microsoft.com/t5/Themes-Gallery/Marketing-Campaign-Analysis-Dashboard/td-p/4887536), por visually (Fabric Community Themes Gallery)
+
+**Observação:** os dashboards acima são de terceiros e estão publicados como showcase.
+
 ## 🚀 Como rodar
 
 1. **Instale as dependências:**
