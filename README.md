@@ -1,3 +1,5 @@
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+
 # bi-dashboard-interpreter
 A focused crawler for BI dashboards (UI-level, non-invasive).  
 Este projeto utiliza IA Multimodal (Gemini 2.5) e Automação de Navegador (Playwright) para navegar, capturar e documentar funcionalmente painéis de Business Intelligence (Power BI, etc.) automaticamente.
@@ -142,3 +144,13 @@ Verifique se o dashboard é muito pesado. Aumente o `asyncio.sleep` no `cataloge
 
 **Erros de "White Screen"?**
 O sistema possui detecção automática de tela branca (erros de renderização do Power BI). Se a imagem for >98% branca, ela é ignorada e logada como erro, sem quebrar o fluxo.
+
+## 📝 Licença
+
+Este projeto é licenciado sob a **Apache License 2.0**.  
+Consulte o arquivo [LICENSE](LICENSE) para mais detalhes.
+
+A licença garante:
+* ✅ Uso comercial livre.
+* ✅ Modificação e distribuição permitidas.
+* 🛡️ **Proteção contra processos de patentes** (contribuição segura).
