@@ -1,8 +1,12 @@
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
 # bi-dashboard-interpreter
-A focused crawler for BI dashboards (UI-level, non-invasive).  
+
+*A focused crawler for BI dashboards (UI-level, non-invasive).*
+
 Este projeto utiliza IA Multimodal (Gemini 2.5) e Automação de Navegador (Playwright) para navegar, capturar e documentar funcionalmente painéis de Business Intelligence (Power BI, etc.) automaticamente.
+
+> **Nota de uso:** Execute apenas com credenciais próprias e em conteúdos cuja captura/armazenamento (prints e metadados) seja permitido pelas políticas do ambiente.
 
 ## 🧱 Modularização
 
@@ -42,7 +46,7 @@ python main.py
 
 ## 🔐 Ambientes com Login (MFA/SSO)
 
-O robô foi desenhado para atuar em colaboração com o humano ("Human-in-the-loop") para superar barreiras complexas de autenticação.
+O robô foi desenhado para atuar em colaboração com o humano ("Human-in-the-loop") para operar em ambientes com SSO/MFA com participação do usuário autenticado.
 
 1. Ao iniciar, o robô abre o navegador.
 2. Se ele encontrar uma tela de login, o terminal exibirá: **`🛑 TELA DE LOGIN DETECTADA`**.
