@@ -18,7 +18,7 @@ class BrowserDriver:
         logger.info(f"Iniciando navegador (Headless: {headless})...")
         self.browser = await self.playwright.chromium.launch(headless=headless)
         
-        # Cria contexto com vídeo Full HD forçado
+        # Cria contexto com Full HD forçado
         self.context = await self.browser.new_context(viewport=VIEWPORT)
         self.page = await self.context.new_page()
 
@@ -100,17 +100,10 @@ class BrowserDriver:
         try:
             # Lista de seletores ordenados por precisão baseada no seu HTML
             selectors = [
-                # 1. Exato: Baseado no aria-label que você achou (Português)
-                "button[aria-label='Próxima Página']",
-                
-                # 2. Variação: Caso o navegador esteja em Inglês
-                "button[aria-label='Next Page']",
-                
-                # 3. Exato: Pela classe específica do ícone da seta (dentro de qualquer botão)
-                "button i.pbi-glyph-chevronrightmedium",
-                
-                # 4. Fallback: Clicar direto no ícone se o botão falhar
-                ".pbi-glyph-chevronrightmedium" 
+                "button i.pbi-glyph-chevronrightmedium", # 1º - classe (agnóstico)
+                ".pbi-glyph-chevronrightmedium",         # 2º - ícone direto
+                "button[aria-label='Próxima Página']",   # 3º - fallback PT
+                "button[aria-label='Next Page']",        # 4º - fallback EN
             ]
             
             for selector in selectors:
