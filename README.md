@@ -147,6 +147,38 @@ O arquivo JSON final consolida a navegação técnica e a análise de negócios.
 
 ```
 
+### Exemplos de saída do Scout
+
+Quando o Scout analisa a imagem, ele retorna uma **reflexão (`nav_reflection`)** justificando a decisão, o que ajuda na auditabilidade do processo.
+
+**Caso 1: Nenhuma navegação encontrada**
+
+```json
+{
+    "nav_reflection": "Seguindo a ordem de prioridade, verifiquei a parte inferior da imagem em busca de um rodapé de navegação nativo do Power BI (barra cinza, contador de páginas, setas). Nenhum rodapé nativo foi encontrado. Em seguida, procurei por abas ou botões de navegação personalizados (no topo, lateral ou rodapé) que mudassem a página inteira. Encontrei vários botões que funcionam como filtros/slicers para os dados da página atual (ex: 'Age Ranges', 'Contains family', 'Sex'), mas nenhum que sirva para navegar entre diferentes páginas do relatório. Como nenhum dos métodos de navegação primários foi identificado, o tipo é 'none'.",
+    "nav_type": "none",
+    "page_count_visual": null,
+    "targets": []
+}
+```
+
+**Caso 2: Navegação Nativa Detectada**
+
+```json
+{
+    "nav_reflection": "A análise seguiu a ordem de prioridade definida. Primeiramente, verifiquei a parte inferior da captura de tela e identifiquei um rodapé nativo do Power BI. Este rodapé contém a contagem de páginas ('1 de 3') e as setas de navegação ('<' e '>'). Como a presença do rodapé nativo tem a maior prioridade, ele foi selecionado como o método de navegação principal. A lista de botões personalizados na lateral esquerda ('Summary', 'Media Analytics', etc.) foi ignorada, conforme as regras. O alvo foi definido como a seta de 'Próxima Página' ('>') dentro deste rodapé.",
+    "nav_type": "native_footer",
+    "page_count_visual": "1 de 3",
+    "targets": [
+        {
+            "label": "Next Page Button",
+            "x": 0.526,
+            "y": 0.984
+        }
+    ]
+}
+```
+
 ---
 
 ## ⚙️ Configuração Avançada (`config.py`)

@@ -1,0 +1,12 @@
+{
+  "nav_reflection": "A native Power BI footer is clearly visible at the bottom of the screen. It contains a page counter '1 de 4' and navigation arrows (< >). According to the instructions, this is the highest priority navigation method and correctly identifies the primary way to switch between the 4 distinct report pages.",
+  "nav_type": "native_footer",
+  "page_count_visual": "1 de 4",
+  "targets": [
+    {
+      "label": "Next Page Button",
+      "x": 0.509,
+      "y": 0.985
+    }
+  ]
+}

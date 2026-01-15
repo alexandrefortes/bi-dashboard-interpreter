@@ -51,6 +51,13 @@ class DashboardCataloger:
         return False
 
     async def process_dashboard(self, url):
+        # 0. Verifica Deduplicação
+        processed = self._load_processed_urls()
+        if url in processed:
+            last_run = processed[url]
+            logger.warning(f"⏭️ URL já processada em {last_run.get('processed_at')} (Run: {last_run.get('run_id')}). Pulando.")
+            return None
+
         run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
         run_dir = Path(OUTPUT_DIR) / run_id
         img_dir = run_dir / "screenshots"
@@ -62,13 +69,6 @@ class DashboardCataloger:
             "timestamp": datetime.now().isoformat(),
             "pages": []
         }
-
-        # 0. Verifica Deduplicação
-        processed = self._load_processed_urls()
-        if url in processed:
-            last_run = processed[url]
-            logger.warning(f"⏭️ URL já processada em {last_run.get('processed_at')} (Run: {last_run.get('run_id')}). Pulando.")
-            return None
 
 
         try:

@@ -1,0 +1,12 @@
+{
+  "nav_reflection": "A captura de tela apresenta um rodapé nativo do Power BI na parte inferior, com um contador de páginas ('1 de 3') e setas de navegação. Conforme as regras de prioridade, este é o principal método de navegação, superando os botões personalizados ('Summary', 'Media Analytics', etc.) localizados na lateral esquerda.",
+  "nav_type": "native_footer",
+  "page_count_visual": "1 de 3",
+  "targets": [
+    {
+      "label": "Next Page Button",
+      "x": 0.518,
+      "y": 0.984
+    }
+  ]
+}

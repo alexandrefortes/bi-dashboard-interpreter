@@ -1,0 +1,17 @@
+{
+  "https://app.powerbi.com/view?pageName=ReportSection&r=eyJrIjoiM2YyOWM0ODItZmM4OC00ZmYxLTlmMmQtOTNlNGE0MTkyNGZkIiwidCI6ImVjYjc2ZjQ4LTAxN2YtNGZmMy05NzNkLTgzMWFiNDcwZjE2ZiJ9": {
+    "processed_at": "2026-01-15T20:26:12.252229",
+    "run_id": "20260115_202515",
+    "log_path": "runs\\20260115_202515_titanic_dataset_(kaggle)_-_dashboard_power_bi\\catalog_titanic_dataset_(kaggle)_-_dashboard_power_bi.json"
+  },
+  "https://app.fabric.microsoft.com/view?r=eyJrIjoiNDJjZTYzNDMtNDc0Mi00NGI5LTljOTMtNGNmYjNjYWQxYTk0IiwidCI6ImQ4ZTFiMDVlLTcwYWEtNGVmNy1iODc4LTQ2NmI2ODhmOTUyZiJ9": {
+    "processed_at": "2026-01-15T20:28:17.518367",
+    "run_id": "20260115_202612",
+    "log_path": "runs\\20260115_202612_financial_performance_summary\\catalog_financial_performance_summary.json"
+  },
+  "https://app.fabric.microsoft.com/view?r=eyJrIjoiMzZkNDY0MmUtNDRmNS00MjQ1LTkyMjctYTIzZTkzY2ZkMjA2IiwidCI6IjE2ZGVlZGU4LTc5ZTktNGUzMy05OWU2LTlkOGQzOTQyZDc5NiIsImMiOjEwfQ%3D%3D": {
+    "processed_at": "2026-01-15T20:29:44.144971",
+    "run_id": "20260115_202817",
+    "log_path": "runs\\20260115_202817_painel_de_performance_de_m\u00eddia_-_resumo\\catalog_painel_de_performance_de_m\u00eddia_-_resumo.json"
+  }
+}

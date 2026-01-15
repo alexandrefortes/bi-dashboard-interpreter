@@ -1,6 +1,5 @@
 import json
 import logging
-import re
 from google import genai
 from google.genai import types
 from config import GEMINI_API_KEY, MODEL_SCOUT, MODEL_ANALYST, VIEWPORT
@@ -72,7 +71,7 @@ class GeminiService:
 
         Retorne estritamente JSON:
         {
-            "nav_reflection": "Sua justificativa e análise prévia aqui. Por quê fez essas escolhas?",
+            "nav_reflection": "Sua justificativa e análise aqui. Por quê fez essas escolhas? Se encontrou outros métodos de navegação além do native_footer comente sobre eles.",
             "nav_type": "native_footer" | "top_tabs" | "left_list" | "none",
             "page_count_visual": "Texto exato visto indicando contagem (ex: '1 of 4') ou null",
             "targets": [
@@ -81,11 +80,36 @@ class GeminiService:
         }
         """
         
+        scout_schema = {
+            "type": "OBJECT",
+            "properties": {
+                "nav_reflection": {"type": "STRING"},
+                "nav_type": {
+                    "type": "STRING",
+                    "enum": ["native_footer", "top_tabs", "left_list", "bottom_tabs", "none"]
+                },
+                "page_count_visual": {"type": "STRING", "nullable": True},
+                "targets": {
+                    "type": "ARRAY",
+                    "items": {
+                        "type": "OBJECT",
+                        "properties": {
+                            "label": {"type": "STRING"},
+                            "x": {"type": "NUMBER"},
+                            "y": {"type": "NUMBER"}
+                        },
+                        "required": ["label", "x", "y"]
+                    }
+                }
+            },
+            "required": ["nav_reflection", "nav_type", "targets"]
+        }
+
         json_text = self._call_gemini(
             MODEL_SCOUT, 
             prompt, 
             image_bytes, 
-            response_schema=None
+            response_schema=scout_schema
         )
         
         base_result = {"nav_type": "none", "targets": [], "raw_response": json_text}
@@ -94,8 +118,8 @@ class GeminiService:
             return base_result
 
         try:
-            cleaned_text = re.sub(r"```json\s*|\s*```", "", json_text).strip()
-            data = json.loads(cleaned_text)
+            # Com esquema rígido, não precisamos de regex para limpar markdown
+            data = json.loads(json_text)
             
             # Garante que raw_response esteja presente no dicionário final
             if isinstance(data, dict):
@@ -153,20 +177,37 @@ class GeminiService:
         Use linguagem técnica de negócios em Português.
         """
         
+        analyst_schema = {
+            "type": "OBJECT",
+            "properties": {
+                "titulo_painel": {"type": "STRING"},
+                "objetivo_macro": {"type": "STRING"},
+                "perguntas_respondidas": {"type": "ARRAY", "items": {"type": "STRING"}},
+                "dominio_negocio": {"type": "STRING"},
+                "elementos_visuais": {"type": "STRING"},
+                "filtros_visiveis": {"type": "ARRAY", "items": {"type": "STRING"}},
+                "principais_indicadores": {"type": "ARRAY", "items": {"type": "STRING"}},
+                "publico_sugerido": {"type": "STRING"}
+            },
+            "required": [
+                "titulo_painel", "objetivo_macro", "perguntas_respondidas",
+                "dominio_negocio", "elementos_visuais", "filtros_visiveis",
+                "principais_indicadores", "publico_sugerido"
+            ]
+        }
+
         json_text = self._call_gemini(
             MODEL_ANALYST, 
             prompt, 
             image_bytes, 
-            response_schema=None
+            response_schema=analyst_schema
         )
 
         if not json_text:
             return {"erro": "Falha na análise LLM"}
 
         try:
-            import re
-            cleaned_text = re.sub(r"```json\s*|\s*```", "", json_text).strip()           
-            return json.loads(cleaned_text)
+            return json.loads(json_text)
         except json.JSONDecodeError:
             logger.error(f"JSON Inválido no Analyst: {json_text}")
             return {"erro": "JSON inválido retornado pelo LLM"}
