@@ -1,9 +1,12 @@
 import io
+import re
 import logging
 import imagehash
+from typing import Optional
 from PIL import Image
 from datetime import datetime
 from config import ROI_CROP
+
 
 def setup_logger(name="Cataloger"):
     """Configura um logger simples com output no console."""
@@ -17,6 +20,37 @@ def setup_logger(name="Cataloger"):
         logger.addHandler(ch)
         
     return logger
+
+
+def parse_page_count(text: str):
+    # type: (str) -> Optional[int]
+    """
+    Extrai o total de páginas de textos de navegação.
+    
+    Suporta formatos:
+    - "1 de 4", "2 de 10" (português)
+    - "1 of 4", "3 of 15" (inglês)  
+    - "1/4", "2/7" (barra)
+    - "1 - 4", "1 – 4" (hífen/travessão)
+    
+    Returns:
+        Total de páginas (int) ou None se não encontrar padrão válido.
+    """
+    if not text:
+        return None
+        
+    patterns = [
+        r'(\d+)\s*(?:de|of)\s*(\d+)',   # "1 de 4", "1 of 4"
+        r'(\d+)\s*/\s*(\d+)',            # "1/4", "1 / 4"
+        r'(\d+)\s*[-–—]\s*(\d+)',        # "1 - 4", "1 – 4", "1 — 4"
+    ]
+    
+    for pattern in patterns:
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            return int(match.group(2))  # Retorna o total (segundo número)
+    
+    return None
 
 def bytes_to_image(img_bytes):
     """Converte bytes para objeto PIL Image."""

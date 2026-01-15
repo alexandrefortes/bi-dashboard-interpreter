@@ -5,7 +5,7 @@ from pathlib import Path
 from datetime import datetime
 
 from config import OUTPUT_DIR, PHASH_THRESHOLD, DUPLICATE_THRESHOLD, VIEWPORT, CLICK_ATTEMPT_OFFSETS
-from utils import setup_logger, bytes_to_image, compute_phash, is_error_screen
+from utils import setup_logger, bytes_to_image, compute_phash, is_error_screen, parse_page_count
 from bot_core import BrowserDriver
 from llm_service import GeminiService
 
@@ -60,32 +60,23 @@ class DashboardCataloger:
             logger.info("Executando Scout (Gemini)...")
             nav_data = self.llm.discover_navigation(initial_bytes)
             
-            # --- LÓGICA NOVA PARA EXPANDIR CLIQUES ---
+            # --- LÓGICA PARA EXPANDIR CLIQUES (Navegação Nativa) ---
             if nav_data.get("nav_type") == "native_footer" and nav_data.get("page_count_visual"):
-                try:
-                    # Tenta extrair "X de Y"
-                    texto_paginas = nav_data["page_count_visual"] # ex: "1 de 4"
-                    # Pega o último número da string (total de páginas)
-                    import re
-                    numeros = re.findall(r'\d+', texto_paginas)
-                    if len(numeros) >= 2:
-                        total_paginas = int(numeros[-1]) # Pega o 4
-                        paginas_restantes = total_paginas - 1
-                        
-                        # Se tivermos um alvo de "próximo", multiplicamos ele
-                        if nav_data.get("targets"):
-                            seta_next = nav_data["targets"][0] # Assume que o unico alvo é a seta
-                            novos_targets = []
-                            for p in range(paginas_restantes):
-                                # Cria uma cópia do alvo para cada página que falta
-                                alvo_clone = seta_next.copy()
-                                alvo_clone['label'] = f"Ir para Pág {p+2}"
-                                novos_targets.append(alvo_clone)
-                            
-                            nav_data["targets"] = novos_targets
-                            logger.info(f"Expandindo navegação nativa para {len(novos_targets)} cliques.")
-                except Exception as e:
-                    logger.warning(f"Erro ao calcular paginação nativa: {e}")
+                texto_paginas = nav_data["page_count_visual"]
+                total_paginas = parse_page_count(texto_paginas)
+                
+                if total_paginas and total_paginas > 1 and nav_data.get("targets"):
+                    paginas_restantes = total_paginas - 1
+                    seta_next = nav_data["targets"][0]  # Assume que o único alvo é a seta
+                    
+                    novos_targets = []
+                    for p in range(paginas_restantes):
+                        alvo_clone = seta_next.copy()
+                        alvo_clone['label'] = f"Ir para Pág {p+2}"
+                        novos_targets.append(alvo_clone)
+                    
+                    nav_data["targets"] = novos_targets
+                    logger.info(f"Expandindo navegação nativa para {len(novos_targets)} cliques.")
             # -----------------------------------------
 
             logger.info(f"Navegação detectada: {nav_data.get('nav_type')} | Alvos: {len(nav_data.get('targets', []))}")
