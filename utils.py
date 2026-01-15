@@ -96,7 +96,7 @@ def sanitize_filename(title: str, max_length: int = 50) -> str:
     if len(safe) > max_length:
         safe = safe[:max_length].rstrip('_')
     
-    return safe
+    return safe.lower()
 
 
 def is_error_screen(pil_image):
