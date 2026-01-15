@@ -16,6 +16,32 @@ class DashboardCataloger:
         self.driver = BrowserDriver()
         self.llm = GeminiService()
         self.seen_hashes = [] # Lista de hashes já vistos para deduplicação
+        self.processed_urls_file = Path(OUTPUT_DIR) / "processed_urls.json"
+        
+    def _load_processed_urls(self):
+        """Carrega lista de URLs já processadas."""
+        if self.processed_urls_file.exists():
+            try:
+                with open(self.processed_urls_file, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception as e:
+                logger.error(f"Erro ao carregar processed_urls.json: {e}")
+                return {}
+        return {}
+
+    def _mark_as_processed(self, url, run_id, log_path):
+        """Marca URL como processada."""
+        data = self._load_processed_urls()
+        data[url] = {
+            "processed_at": datetime.now().isoformat(),
+            "run_id": run_id,
+            "log_path": str(log_path)
+        }
+        try:
+            with open(self.processed_urls_file, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2)
+        except Exception as e:
+            logger.error(f"Erro ao salvar processed_urls.json: {e}")
 
     def _is_duplicate(self, current_phash):
         """Verifica se a página já foi catalogada."""
@@ -36,6 +62,14 @@ class DashboardCataloger:
             "timestamp": datetime.now().isoformat(),
             "pages": []
         }
+
+        # 0. Verifica Deduplicação
+        processed = self._load_processed_urls()
+        if url in processed:
+            last_run = processed[url]
+            logger.warning(f"⏭️ URL já processada em {last_run.get('processed_at')} (Run: {last_run.get('run_id')}). Pulando.")
+            return None
+
 
         try:
             # 1. Start & Navigate
@@ -59,6 +93,17 @@ class DashboardCataloger:
             # 3. Scout (Gemini identifica navegação)
             logger.info("Executando Scout (Gemini)...")
             nav_data = self.llm.discover_navigation(initial_bytes)
+            
+            # --- SALVA AUDITORIA SCOUT ---
+            if "raw_response" in nav_data:
+                audit_path = run_dir / "scout_audit_raw.txt"
+                try:
+                    audit_path.write_text(nav_data["raw_response"] or "", encoding="utf-8")
+                    # Remove do dicionário principal para não sujar o catalog.json
+                    del nav_data["raw_response"]
+                except Exception as e:
+                    logger.warning(f"Falha ao salvar auditoria Scout: {e}")
+            # -----------------------------
             
             # --- LÓGICA PARA EXPANDIR CLIQUES (Navegação Nativa) ---
             if nav_data.get("nav_type") == "native_footer" and nav_data.get("page_count_visual"):
@@ -187,6 +232,10 @@ class DashboardCataloger:
                 json.dump(catalog_data, f, indent=2, ensure_ascii=False)
             
             logger.info(f"Processo finalizado. Catálogo salvo em: {json_path}")
+            
+            # 7. Marca como processado com sucesso
+            self._mark_as_processed(url, run_id, json_path)
+            
             return catalog_data
 
         finally:

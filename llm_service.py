@@ -72,6 +72,7 @@ class GeminiService:
 
         Retorne estritamente JSON:
         {
+            "nav_reflection": "Sua justificativa e análise prévia aqui. Por quê fez essas escolhas?",
             "nav_type": "native_footer" | "top_tabs" | "left_list" | "none",
             "page_count_visual": "Texto exato visto indicando contagem (ex: '1 of 4') ou null",
             "targets": [
@@ -87,12 +88,20 @@ class GeminiService:
             response_schema=None
         )
         
+        base_result = {"nav_type": "none", "targets": [], "raw_response": json_text}
+
         if not json_text:
-            return {"nav_type": "none", "targets": []}
+            return base_result
 
         try:
             cleaned_text = re.sub(r"```json\s*|\s*```", "", json_text).strip()
             data = json.loads(cleaned_text)
+            
+            # Garante que raw_response esteja presente no dicionário final
+            if isinstance(data, dict):
+                data["raw_response"] = json_text
+            else:
+                data = base_result
             
             # Se o modelo devolveu pixels (ex: > 1), normaliza usando VIEWPORT
             targets = data.get("targets", [])
@@ -110,7 +119,7 @@ class GeminiService:
 
         except json.JSONDecodeError:
             logger.error(f"Falha ao decodificar JSON do Scout. Recebido: {json_text}")
-            return {"nav_type": "none", "targets": []}
+            return base_result
 
     def analyze_page(self, image_bytes):
         """Estágio D: Documentação Funcional (Abstrata e Atemporal)."""

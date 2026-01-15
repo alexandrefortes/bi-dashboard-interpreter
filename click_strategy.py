@@ -170,7 +170,7 @@ class ConcentricSearchClicker:
                 )
             else:
                 if attempt_idx == 0:
-                    logger.warning("⚠️ Clique original não alterou a página. Iniciando busca em círculos concêntricos...")
+                    logger.warning("⚠️ Clique inicial não alterou a página. Iniciando busca em círculos concêntricos...")
         
         # Todas as tentativas falharam
         return ClickResult(success=False)
