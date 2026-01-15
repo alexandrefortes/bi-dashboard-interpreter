@@ -1,13 +1,13 @@
 import asyncio
 import json
-import time
 from pathlib import Path
 from datetime import datetime
 
-from config import OUTPUT_DIR, PHASH_THRESHOLD, DUPLICATE_THRESHOLD, VIEWPORT, CLICK_ATTEMPT_OFFSETS
+from config import OUTPUT_DIR, DUPLICATE_THRESHOLD, VIEWPORT, CLICK_ATTEMPT_OFFSETS
 from utils import setup_logger, bytes_to_image, compute_phash, is_error_screen, parse_page_count
 from bot_core import BrowserDriver
 from llm_service import GeminiService
+from click_strategy import ConcentricSearchClicker, DOMFallbackClicker
 
 logger = setup_logger("Cataloger")
 
@@ -99,108 +99,44 @@ class DashboardCataloger:
                 "hash": home_hash
             }]
 
+            # Inicializa estratégias de clique
+            clicker = ConcentricSearchClicker(self.driver, CLICK_ATTEMPT_OFFSETS, VIEWPORT)
+            dom_fallback = DOMFallbackClicker(self.driver)
+
             # 4. Explorer (Itera sobre targets)
             for i, target in enumerate(targets):
                 logger.info(f"--- Explorando alvo {i+1}/{len(targets)}: {target.get('label')} ---")
 
-                # Reseta variáveis de controle               
-                page_changed = False
-                final_shot_bytes = None
-                final_current_hash = None
+                # Tenta clique com estratégia Cross Search
+                result = await clicker.click_with_retry(
+                    target['x'], target['y'],
+                    self.seen_hashes,
+                    nav_type
+                )
                 
-                # --- LOOP DE TENTATIVA DE CLIQUE (Busca em Cruz) ---
-                for attempt_idx, (off_x, off_y) in enumerate(CLICK_ATTEMPT_OFFSETS):
-                    
-                    # Converte offset de pixels para porcentagem
-                    # (Precisamos disso pq o bot_core clica por %)
-                    adj_x = target['x'] + (off_x / VIEWPORT['width'])
-                    adj_y = target['y'] + (off_y / VIEWPORT['height'])
-                    
-                    if attempt_idx > 0:
-                        logger.info(f"🔄 Tentativa {attempt_idx} (Offset {off_x}px, {off_y}px)...")
-                    
-                    # Clica
-                    await self.driver.click_at_percentage(adj_x, adj_y)
-                    
-                    # Espera carregar (se for retry, espera menos pra ser ágil)
-                    wait_time = 3 if attempt_idx == 0 else 2
-                    await asyncio.sleep(wait_time)
-                    
-                    # Snapshot (com suporte a scroll)
-                    shot_bytes = await self.driver.get_full_page_screenshot_bytes()
-                    shot_pil = bytes_to_image(shot_bytes)
-                    
-                    if is_error_screen(shot_pil):
-                        logger.warning("Tela de erro. Tentando próximo offset...")
-                        continue
-
-                    # Calcula Hash
-                    current_hash = compute_phash(shot_pil, nav_type)
-                    
-                    # Verifica duplicata contra TUDO que já vimos
-                    is_dup = False
-                    for seen_hash in self.seen_hashes:
-                        if current_hash - seen_hash < DUPLICATE_THRESHOLD:
-                            is_dup = True
-                            break
-                    
-                    if not is_dup:
-                        # SUCESSO! A página mudou.
-                        logger.info(f"✅ Clique funcionou (com offset {off_x},{off_y})!")
-                        page_changed = True
-                        final_shot_bytes = shot_bytes
-                        final_current_hash = current_hash
-                        break # Sai do loop de tentativas
-                    else:
-                        if attempt_idx == 0:
-                            logger.warning("⚠️ Clique original não alterou a página. Iniciando busca em cruz...")
+                # Se falhou e é navegação nativa, tenta fallback DOM
+                if not result.success and nav_type == "native_footer":
+                    result = await dom_fallback.try_dom_click(
+                        self.seen_hashes,
+                        nav_type
+                    )
                 
-                # --- FIM DO LOOP DE CLIQUE ---
-
-                # Se depois de todas as tentativas a página ainda for duplicada:
-                if not page_changed:
-                    logger.warning("🚫 Falha: Todas as tentativas de clique resultaram em página duplicada.")
-                    
-                    # --- TENTATIVA DE RESGATE (FALLBACK DOM) ---
-                    # Mantive sua lógica original de resgate aqui como última esperança
-                    if nav_type == "native_footer":
-                        logger.info("🚑 Tentando resgate com clique nativo via DOM...")
-                        clicked_dom = await self.driver.try_click_native_next_button()
-                        if clicked_dom:
-                            await asyncio.sleep(5)
-                            shot_bytes = await self.driver.get_full_page_screenshot_bytes()
-                            shot_pil = bytes_to_image(shot_bytes)
-                            current_hash = compute_phash(shot_pil, nav_type)
-                            
-                            # Re-verifica duplicata do resgate
-                            is_dup_retry = False
-                            for seen_hash in self.seen_hashes:
-                                if current_hash - seen_hash < DUPLICATE_THRESHOLD:
-                                    is_dup_retry = True
-                                    break
-                            
-                            if not is_dup_retry:
-                                logger.info("✅ Resgate DOM funcionou!")
-                                page_changed = True
-                                final_shot_bytes = shot_bytes
-                                final_current_hash = current_hash
-
-                # Se ainda assim não mudou, desiste desse alvo e vai pro próximo
-                if not page_changed:
+                # Se ainda falhou, desiste desse alvo
+                if not result.success:
                     logger.error(f"💀 Alvo '{target.get('label')}' ignorado definitivamente.")
                     continue
                 
                 # SE CHEGOU AQUI, É UMA PÁGINA VÁLIDA NOVA
-                self.seen_hashes.append(final_current_hash)
+                self.seen_hashes.append(result.phash)
                 
                 # Salva imagem
                 filename = f"{i+1:02d}_target.png"
-                (img_dir / filename).write_bytes(final_shot_bytes)
+                (img_dir / filename).write_bytes(result.screenshot_bytes)
                 
                 pages_to_analyze.append({
                     "id": i+1,
                     "label": target.get("label", f"Page {i+1}"),
-                    "bytes": final_shot_bytes,
+                    "bytes": result.screenshot_bytes,
                     "filename": filename
                 })
 

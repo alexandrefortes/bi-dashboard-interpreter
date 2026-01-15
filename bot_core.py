@@ -57,21 +57,73 @@ class BrowserDriver:
                 # Pequena pausa para garantir que o redirecionamento pós-login terminou
                 await asyncio.sleep(5)
 
-            # 3. Estabilização Padrão (igual ao código anterior)
+            # 3. Estabilização Padrão
             logger.info("Aguardando networkidle...")
             try:
                 await self.page.wait_for_load_state("networkidle", timeout=15000)
             except Exception:
                 logger.warning("Networkidle timeout (prosseguindo)")
 
-            logger.info("Aguardando renderização final (sleep 5s)...")
-            await asyncio.sleep(5)
+            # 4. Estabilização Visual - espera visuais terminarem de renderizar
+            await self._wait_for_visual_stability()
             
             return True
 
         except Exception as e:
             logger.error(f"Erro na navegação: {e}")
             return False
+
+    async def _wait_for_visual_stability(
+        self, 
+        max_wait_seconds: float = 30.0, 
+        check_interval: float = 1.0,
+        stability_threshold: int = 5
+    ):
+        """
+        Aguarda até que a página pare de mudar visualmente.
+        
+        Útil para dashboards com visuais assíncronos (mapas, gráficos animados).
+        Compara screenshots consecutivas usando perceptual hash.
+        
+        Args:
+            max_wait_seconds: Tempo máximo de espera em segundos.
+            check_interval: Intervalo entre verificações em segundos.
+            stability_threshold: Diferença máxima de hash para considerar estável.
+        """
+        from utils import bytes_to_image, compute_phash
+        
+        logger.info("⏳ Aguardando estabilidade visual...")
+        
+        start_time = asyncio.get_event_loop().time()
+        previous_hash = None
+        stable_count = 0
+        stable_needed = 2  # Precisa de 2 leituras estáveis consecutivas
+        
+        while (asyncio.get_event_loop().time() - start_time) < max_wait_seconds:
+            # Captura screenshot atual
+            shot_bytes = await self.page.screenshot(type="png")
+            shot_pil = bytes_to_image(shot_bytes)
+            current_hash = compute_phash(shot_pil)
+            
+            if previous_hash is not None:
+                diff = current_hash - previous_hash
+                
+                if diff <= stability_threshold:
+                    stable_count += 1
+                    logger.debug(f"Visual estável ({stable_count}/{stable_needed}), diff={diff}")
+                    
+                    if stable_count >= stable_needed:
+                        elapsed = asyncio.get_event_loop().time() - start_time
+                        logger.info(f"✅ Página estabilizada em {elapsed:.1f}s")
+                        return
+                else:
+                    stable_count = 0
+                    logger.debug(f"Visual ainda mudando (diff={diff}), aguardando...")
+            
+            previous_hash = current_hash
+            await asyncio.sleep(check_interval)
+        
+        logger.warning(f"⚠️ Timeout de estabilidade visual ({max_wait_seconds}s) - prosseguindo mesmo assim")
 
     async def click_at_percentage(self, x_pct, y_pct):
         """Clica na tela baseada em porcentagem da viewport."""
@@ -107,15 +159,15 @@ class BrowserDriver:
         container_info = await self._find_scroll_container()
         
         if not container_info or not container_info.get('canScroll'):
-            # Não tem scroll, retorna screenshot normal
-            logger.info("Página sem scroll vertical, capturando normalmente...")
+            # Não tem scroll que atinja o critério de área mínima
             return await self.page.screenshot(type="png")
         
         selector = container_info['selector']
         scroll_height = container_info['scrollHeight']
         client_height = container_info['clientHeight']
+        area_ratio = container_info.get('areaRatio', '?')
         
-        logger.info(f"Scroll detectado em '{selector}' (scrollH={scroll_height}px, viewportH={client_height}px)")
+        logger.info(f"Scroll detectado em '{selector}' (area={area_ratio}%, scrollH={scroll_height}px)")
         
         # 2. Captura com scroll
         screenshots, positions = await self._capture_with_scroll(
@@ -134,44 +186,56 @@ class BrowserDriver:
         final_image.save(output_buffer, format="PNG")
         return output_buffer.getvalue()
 
-    async def _find_scroll_container(self):
-        """Encontra o container principal com scroll vertical."""
-        return await self.page.evaluate("""() => {
-            const allElements = document.querySelectorAll('*');
-            let bestMatch = null;
-            let maxScrollHeight = 0;
+    async def _find_scroll_container(self, min_area_ratio: float = 0.6):
+        """
+        Encontra o container principal com scroll vertical.
+        
+        Retorna o elemento com scroll de maior área que ocupe >= min_area_ratio do viewport.
+        """
+        return await self.page.evaluate("""(minAreaRatio) => {
+            const viewportArea = window.innerWidth * window.innerHeight;
+            let best = null;
+            let bestArea = 0;
             
-            for (const el of allElements) {
+            for (const el of document.querySelectorAll('*')) {
                 const hasVScroll = el.scrollHeight > el.clientHeight + 10;
-                if (hasVScroll && el.scrollHeight > maxScrollHeight) {
-                    const rect = el.getBoundingClientRect();
-                    // Verifica se é visível e grande o suficiente
-                    if (rect.width > 500 && rect.height > 300) {
-                        maxScrollHeight = el.scrollHeight;
-                        
-                        // Gera seletor único
-                        let selector = el.tagName.toLowerCase();
-                        if (el.id) {
-                            selector = '#' + el.id;
-                        } else if (el.className) {
-                            const classes = el.className.toString().split(/\\s+/).filter(c => c && !c.includes(':'));
-                            if (classes.length > 0) {
-                                selector = el.tagName.toLowerCase() + '.' + classes[0];
-                            }
+                if (!hasVScroll) continue;
+                
+                const rect = el.getBoundingClientRect();
+                if (rect.width < 100 || rect.height < 100) continue;
+                
+                const elementArea = rect.width * rect.height;
+                const areaRatio = elementArea / viewportArea;
+                
+                // Só considera se atinge o critério mínimo de área
+                if (areaRatio < minAreaRatio) continue;
+                
+                // Guarda o de maior área (mais resiliente que "primeiro encontrado")
+                if (elementArea > bestArea) {
+                    bestArea = elementArea;
+                    
+                    let selector = el.tagName.toLowerCase();
+                    if (el.id) {
+                        selector = '#' + el.id;
+                    } else if (el.className) {
+                        const classes = el.className.toString().split(/\\s+/).filter(c => c && !c.includes(':'));
+                        if (classes.length > 0) {
+                            selector = el.tagName.toLowerCase() + '.' + classes[0];
                         }
-                        
-                        bestMatch = {
-                            selector: selector,
-                            scrollHeight: el.scrollHeight,
-                            clientHeight: el.clientHeight,
-                            canScroll: true
-                        };
                     }
+                    
+                    best = {
+                        selector: selector,
+                        scrollHeight: el.scrollHeight,
+                        clientHeight: el.clientHeight,
+                        canScroll: true,
+                        areaRatio: Math.round(areaRatio * 100)
+                    };
                 }
             }
             
-            return bestMatch;
-        }""")
+            return best;
+        }""", min_area_ratio)
 
     async def _capture_with_scroll(self, selector, scroll_height, client_height):
         """Captura screenshots enquanto faz scroll."""
@@ -182,7 +246,13 @@ class BrowserDriver:
             const el = document.querySelector('{selector}');
             if (el) el.scrollTop = 0;
         }}""")
-        await self.page.wait_for_timeout(SCROLL_PAUSE_MS)
+        
+        # Aguarda estabilização visual no topo
+        await self._wait_for_visual_stability(
+            max_wait_seconds=5.0,
+            check_interval=0.5,
+            stability_threshold=3
+        )
         
         screenshots = []
         positions = []
@@ -195,7 +265,13 @@ class BrowserDriver:
                 const el = document.querySelector('{selector}');
                 if (el) el.scrollTop = scrollY;
             }}""", current_scroll)
-            await self.page.wait_for_timeout(SCROLL_PAUSE_MS)
+            
+            # Estabilização visual leve para cada posição de scroll
+            await self._wait_for_visual_stability(
+                max_wait_seconds=5.0,  # Timeout curto para scroll
+                check_interval=0.5,
+                stability_threshold=3  # Mais sensível
+            )
             
             # Lê posição real
             actual_scroll = await self.page.evaluate(f"""() => {{

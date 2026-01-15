@@ -13,6 +13,7 @@ Este projeto utiliza IA Multimodal (Gemini 2.5) e Automação de Navegador (Play
 O código segue princípios de responsabilidade única:
 * **`main.py`**: Orquestrador de entrada.
 * **`cataloger.py`**: Lógica de fluxo (Batedor -> Explorador -> Analista).
+* **`click_strategy.py`**: Estratégias de clique com retries (Círculos Concêntricos, DOM Fallback).
 * **`llm_service.py`**: Integração com Google GenAI (Gemini).
 * **`bot_core.py`**: Camada de abstração do Playwright.
 * **`config.py`**: Centralização de constantes e ajustes finos.
@@ -78,10 +79,10 @@ O projeto opera com 3 "personas" de IA sequenciais:
 ### 2. The Explorer (O Explorador)
 
 * **Função:** Navegar com resiliência.
-* **Lógica de "Cross Search" (Busca em Cruz):**
+* **Lógica de "Círculos Concêntricos":**
 * O robô tenta clicar na coordenada sugerida pelo Scout.
 * Verifica se a tela mudou (usando Hash Visual).
-* **Se falhar:** Ele tenta clicar automaticamente um pouco para cima, baixo, esquerda e direita (offsets configuráveis em `config.py`) para compensar imprecisões do modelo.
+* **Se falhar:** Expande em círculos concêntricos ao redor do ponto (8 direções por raio: N, NE, E, SE, S, SW, W, NW) até encontrar o alvo.
 * **Fallback (Último recurso):** Se for navegação nativa e o clique visual falhar, ele injeta cliques via DOM (HTML) nos botões do Power BI.
 
 ### 3. The Analyst (O Analista)
@@ -93,11 +94,13 @@ O projeto opera com 3 "personas" de IA sequenciais:
 ### Adendo sobre captura de tela:
 
 1. Acesso inicial ou clique para mudar de página
-2. Espera carregar (3-5 segundos)
-3. Chama get_full_page_screenshot_bytes() que:
+2. **Estabilização Visual:** Aguarda até que 2 screenshots consecutivas sejam idênticas (perceptual hash)
+   - Garante que mapas, gráficos e visuais assíncronos terminem de renderizar
+   - Timeout configurável (padrão: 30s navegação, 15s após clique, 5s scroll)
+3. Chama `get_full_page_screenshot_bytes()` que:
+    ├─ **Detecta scroll container:** Seleciona o elemento de maior área com scroll que ocupe ≥60% do viewport (ignora widgets internos menores)
     ├─ Volta ao topo (scrollTop = 0)
-    ├─ Detecta se tem scroll
-    ├─ Se sim: captura múltiplas vezes enquanto rola
+    ├─ Se tem scroll: captura múltiplas vezes com estabilização visual em cada posição
     ├─ Une as capturas
     └─ Volta ao topo novamente
 4. Salva a imagem final
@@ -152,8 +155,9 @@ O arquivo JSON final consolida a navegação técnica e a análise de negócios.
 
 Você pode ajustar a sensibilidade do robô:
 
-* **`CLICK_ATTEMPT_OFFSETS`**: Lista de pixels para a "Busca em Cruz".
-* Ex: `[(0,0), (0, 20), (0, -20)]` tenta no centro, depois 20px pra baixo, depois pra cima.
+* **`CLICK_ATTEMPT_OFFSETS`**: Lista de offsets gerada dinamicamente em círculos concêntricos.
+* Por padrão: centro + 4 anéis × 8 direções = **33 pontos de tentativa**.
+* Configurável via `_generate_concentric_offsets(max_radius, step)` em `config.py`.
 
 
 * **`PHASH_THRESHOLD`**: Sensibilidade para detectar mudança de página. (Padrão: 8).
@@ -162,7 +166,13 @@ Você pode ajustar a sensibilidade do robô:
 ## 🛠️ Solução de Problemas
 
 **O robô clica, mas a página não muda?**
-Verifique se o dashboard é muito pesado. Aumente o `asyncio.sleep` no `cataloger.py` ou adicione mais offsets no `CLICK_ATTEMPT_OFFSETS` em `config.py`.
+O sistema usa círculos concêntricos para encontrar o alvo. Se ainda falhar, verifique os logs para ver se a estabilização visual está detectando mudanças. Adicione mais offsets no `CLICK_ATTEMPT_OFFSETS` em `config.py` se necessário.
+
+**Visuais carregando pela metade (mapas, gráficos)?**
+A estabilização visual deveria resolver isso automaticamente. Se persistir, aumente o `max_wait_seconds` em `_wait_for_visual_stability()` no `bot_core.py`.
+
+**Scroll capturando widget interno (tabela) em vez da página?**
+O sistema seleciona o elemento de maior área com scroll que ocupe ≥60% do viewport. Se ainda selecionar errado, ajuste `min_area_ratio` em `_find_scroll_container()` no `bot_core.py`.
 
 **Erros de "White Screen"?**
 O sistema possui detecção automática de tela branca (erros de renderização do Power BI). Se a imagem for >98% branca, ela é ignorada e logada como erro, sem quebrar o fluxo.

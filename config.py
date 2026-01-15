@@ -25,9 +25,18 @@ OUTPUT_DIR = "runs"
 VIEWPORT = {'width': 1920, 'height': 1080}
 
 # Configurações de Navegação e Resiliência
-# Offsets em pixels (x, y) para tentativa de clique em cruz (Cross Search)
-# Ordem: Centro, Cima, Baixo, Esquerda, Direita
-CLICK_ATTEMPT_OFFSETS = [(0, 0), (0, -20), (0, 20), (-20, 0), (20, 0)]
+# Offsets em círculos concêntricos (centro + 4 anéis × 8 direções = 33 pontos)
+# Mais robusto que cruz fixa para alvos pequenos
+def _generate_concentric_offsets(max_radius=40, step=10):
+    offsets = [(0, 0)]
+    for radius in range(step, max_radius + 1, step):
+        offsets.extend([
+            (0, -radius), (radius, -radius), (radius, 0), (radius, radius),
+            (0, radius), (-radius, radius), (-radius, 0), (-radius, -radius)
+        ])
+    return offsets
+
+CLICK_ATTEMPT_OFFSETS = _generate_concentric_offsets(max_radius=40, step=10)
 
 # ROIs para ignorar partes da imagem no cálculo do hash (nav_type -> crop box)
 # Formato: (left_pct, top_pct, right_pct, bottom_pct)
