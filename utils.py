@@ -106,12 +106,12 @@ def is_error_screen(pil_image):
     img_small = pil_image.resize((100, 100))
     pixels = list(img_small.getdata())
     
-    # 9500 (98%)
-    # Dashboards clean costumam ser muito brancos.
+    # 9900 (99%)
+    # Aumentado para suportar dashboards "clean" (fundo branco)
     white = sum(1 for r,g,b in pixels if r > 240 and g > 240 and b > 240)
     
-    # Se >98% branco = provável erro
-    return (white > 9500)
+    # Se >99% branco = provável erro (tela branca da morte)
+    return (white > 9900)
 
 def clamp(value, min_val=0, max_val=1):
     """Restringe um valor entre min_val e max_val."""

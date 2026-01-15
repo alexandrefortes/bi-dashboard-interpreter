@@ -15,7 +15,7 @@ MODEL_SCOUT = "gemini-2.5-pro"
 MODEL_ANALYST = "gemini-2.5-pro"
 
 # Configurações de Comparação Visual
-PHASH_THRESHOLD = 8  # Diferença mínima para considerar mudança de página
+
 DUPLICATE_THRESHOLD = 4 # Diferença máxima para considerar página duplicada (já vista)
 
 # Configurações de Diretório
@@ -41,6 +41,7 @@ CLICK_ATTEMPT_OFFSETS = _generate_concentric_offsets(max_radius=40, step=10)
 # ROIs para ignorar partes da imagem no cálculo do hash (nav_type -> crop box)
 # Formato: (left_pct, top_pct, right_pct, bottom_pct)
 ROI_CROP = {
+    "native_footer": (0, 0, 1, 0.90),  # remove 10% inferior (Power BI footer)
     "bottom_tabs": (0, 0, 1, 0.90),    # remove 10% inferior
     "left_list": (0.20, 0, 1, 1),      # remove 20% esquerda
     "top_tabs": (0, 0.08, 1, 1),       # remove 8% superior

@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 from datetime import datetime
 
-from config import OUTPUT_DIR, DUPLICATE_THRESHOLD, VIEWPORT, CLICK_ATTEMPT_OFFSETS
+from config import OUTPUT_DIR, VIEWPORT, CLICK_ATTEMPT_OFFSETS
 from utils import setup_logger, bytes_to_image, compute_phash, is_error_screen, parse_page_count, sanitize_filename
 from bot_core import BrowserDriver
 from llm_service import GeminiService
@@ -42,13 +42,6 @@ class DashboardCataloger:
                 json.dump(data, f, indent=2)
         except Exception as e:
             logger.error(f"Erro ao salvar processed_urls.json: {e}")
-
-    def _is_duplicate(self, current_phash):
-        """Verifica se a página já foi catalogada."""
-        for seen_hash in self.seen_hashes:
-            if current_phash - seen_hash < DUPLICATE_THRESHOLD:
-                return True
-        return False
 
     async def process_dashboard(self, url):
         # 0. Verifica Deduplicação

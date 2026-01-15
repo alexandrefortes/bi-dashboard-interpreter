@@ -1,8 +1,0 @@
-```json
-{
-    "nav_reflection": "Seguindo a ordem de prioridade, verifiquei a parte inferior da imagem em busca de um rodapé de navegação nativo do Power BI (barra cinza, contador de páginas, setas). Nenhum rodapé nativo foi encontrado. Em seguida, procurei por abas ou botões de navegação personalizados (no topo, lateral ou rodapé) que mudassem a página inteira. Encontrei vários botões que funcionam como filtros/slicers para os dados da página atual (ex: 'Age Ranges', 'Contains family', 'Sex'), mas nenhum que sirva para navegar entre diferentes páginas do relatório. Como nenhum dos métodos de navegação primários foi identificado, o tipo é 'none'.",
-    "nav_type": "none",
-    "page_count_visual": null,
-    "targets": []
-}
-```

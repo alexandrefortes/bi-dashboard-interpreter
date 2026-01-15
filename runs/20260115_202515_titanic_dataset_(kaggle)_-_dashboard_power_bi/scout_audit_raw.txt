@@ -1,6 +1,0 @@
-{
-  "nav_reflection": "A análise da captura de tela não revelou nenhum método de navegação entre páginas. Não há um rodapé nativo do Power BI na parte inferior, que seria a primeira prioridade. Além disso, não existem abas personalizadas ou listas de botões no topo, na lateral ou na parte inferior do relatório que sirvam para alternar entre diferentes páginas ou seções. Os elementos clicáveis presentes são filtros e segmentadores que afetam os dados na página atual. Conclui-se que este é um relatório de página única, sem navegação principal.",
-  "nav_type": "none",
-  "page_count_visual": null,
-  "targets": []
-}

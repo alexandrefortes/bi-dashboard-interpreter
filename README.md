@@ -189,8 +189,6 @@ Você pode ajustar a sensibilidade do robô:
 * Por padrão: centro + 4 anéis × 8 direções = **33 pontos de tentativa**.
 * Configurável via `_generate_concentric_offsets(max_radius, step)` em `config.py`.
 
-
-* **`PHASH_THRESHOLD`**: Sensibilidade para detectar mudança de página. (Padrão: 8).
 * **`ROI_CROP`**: Define áreas da tela para ignorar no cálculo de duplicidade (ex: ignorar rodapé que contém relógio ou número de página, focando só nos gráficos).
 
 ## 🛠️ Solução de Problemas
@@ -205,7 +203,7 @@ A estabilização visual deveria resolver isso automaticamente. Se persistir, au
 O sistema seleciona o elemento de maior área com scroll que ocupe ≥60% do viewport. Se ainda selecionar errado, ajuste `min_area_ratio` em `_find_scroll_container()` no `bot_core.py`.
 
 **Erros de "White Screen"?**
-O sistema possui detecção automática de tela branca (erros de renderização do Power BI). Se a imagem for >98% branca, ela é ignorada e logada como erro, sem quebrar o fluxo.
+O sistema possui detecção automática de tela branca (erros de renderização do Power BI). Se a imagem for >99% branca, ela é ignorada e logada como erro, sem quebrar o fluxo. Isso evita falsos positivos em dashboards minimalistas legítimos.
 
 ## 📝 Licença
 
@@ -215,4 +213,4 @@ Consulte o arquivo [LICENSE](LICENSE) para mais detalhes.
 A licença garante:
 * ✅ Uso comercial livre.
 * ✅ Modificação e distribuição permitidas.
-* 🛡️ **Proteção contra processos de patentes** (contribuição segura).
+* 🛡️ **Proteção contra processos de patentes**.
