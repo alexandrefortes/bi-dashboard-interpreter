@@ -73,7 +73,6 @@ O projeto opera com 3 "personas" de IA sequenciais:
 * *Nativa:* Rodapé do Power BI (ex.: "1 de 5").
 * *Customizada:* Abas desenhadas no relatório (Abas superiores, Menu lateral).
 
-
 * **Saída:** Lista de coordenadas (x, y) de onde clicar.
 
 ### 2. The Explorer (O Explorador)
@@ -90,6 +89,18 @@ O projeto opera com 3 "personas" de IA sequenciais:
 * **Função:** Documentação de Negócio.
 * **Lógica:** Analisa apenas as páginas únicas validadas.
 * **Saída:** Gera descrições funcionais (título, objetivo, filtros, público-alvo) ignorando dados voláteis (números do dia), focando na estrutura analítica.
+
+### Adendo sobre captura de tela:
+
+1. Acesso inicial ou clique para mudar de página
+2. Espera carregar (3-5 segundos)
+3. Chama get_full_page_screenshot_bytes() que:
+    ├─ Volta ao topo (scrollTop = 0)
+    ├─ Detecta se tem scroll
+    ├─ Se sim: captura múltiplas vezes enquanto rola
+    ├─ Une as capturas
+    └─ Volta ao topo novamente
+4. Salva a imagem final
 
 ---
 

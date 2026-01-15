@@ -1,9 +1,16 @@
 import asyncio
+import io
 from playwright.async_api import async_playwright
+from PIL import Image
 from config import VIEWPORT
 from utils import setup_logger
 
 logger = setup_logger("BotCore")
+
+# Configurações de scroll screenshot
+SCROLL_PAUSE_MS = 600  # Tempo para renderização após scroll
+SCROLL_OVERLAP_PX = 150  # Overlap entre capturas para evitar cortes
+
 
 class BrowserDriver:
     def __init__(self):
@@ -84,10 +91,169 @@ class BrowserDriver:
             return False
 
     async def get_screenshot_bytes(self):
-        """Retorna bytes da screenshot PNG."""
+        """Retorna bytes da screenshot PNG (viewport atual)."""
         return await self.page.screenshot(type="png")
 
+    async def get_full_page_screenshot_bytes(self):
+        """
+        Retorna bytes da screenshot PNG da página completa.
+        
+        Se a página tiver scroll vertical, faz múltiplas capturas
+        enquanto rola e une tudo em uma imagem única.
+        
+        Ideal para dashboards Power BI extensos verticalmente.
+        """
+        # 1. Encontra o container principal com scroll
+        container_info = await self._find_scroll_container()
+        
+        if not container_info or not container_info.get('canScroll'):
+            # Não tem scroll, retorna screenshot normal
+            logger.info("Página sem scroll vertical, capturando normalmente...")
+            return await self.page.screenshot(type="png")
+        
+        selector = container_info['selector']
+        scroll_height = container_info['scrollHeight']
+        client_height = container_info['clientHeight']
+        
+        logger.info(f"Scroll detectado em '{selector}' (scrollH={scroll_height}px, viewportH={client_height}px)")
+        
+        # 2. Captura com scroll
+        screenshots, positions = await self._capture_with_scroll(
+            selector, scroll_height, client_height
+        )
+        
+        if len(screenshots) == 1:
+            return screenshots[0]
+        
+        # 3. Une as imagens
+        logger.info(f"Unindo {len(screenshots)} capturas...")
+        final_image = self._stitch_screenshots(screenshots, positions, client_height, scroll_height)
+        
+        # 4. Converte para bytes
+        output_buffer = io.BytesIO()
+        final_image.save(output_buffer, format="PNG")
+        return output_buffer.getvalue()
+
+    async def _find_scroll_container(self):
+        """Encontra o container principal com scroll vertical."""
+        return await self.page.evaluate("""() => {
+            const allElements = document.querySelectorAll('*');
+            let bestMatch = null;
+            let maxScrollHeight = 0;
+            
+            for (const el of allElements) {
+                const hasVScroll = el.scrollHeight > el.clientHeight + 10;
+                if (hasVScroll && el.scrollHeight > maxScrollHeight) {
+                    const rect = el.getBoundingClientRect();
+                    // Verifica se é visível e grande o suficiente
+                    if (rect.width > 500 && rect.height > 300) {
+                        maxScrollHeight = el.scrollHeight;
+                        
+                        // Gera seletor único
+                        let selector = el.tagName.toLowerCase();
+                        if (el.id) {
+                            selector = '#' + el.id;
+                        } else if (el.className) {
+                            const classes = el.className.toString().split(/\\s+/).filter(c => c && !c.includes(':'));
+                            if (classes.length > 0) {
+                                selector = el.tagName.toLowerCase() + '.' + classes[0];
+                            }
+                        }
+                        
+                        bestMatch = {
+                            selector: selector,
+                            scrollHeight: el.scrollHeight,
+                            clientHeight: el.clientHeight,
+                            canScroll: true
+                        };
+                    }
+                }
+            }
+            
+            return bestMatch;
+        }""")
+
+    async def _capture_with_scroll(self, selector, scroll_height, client_height):
+        """Captura screenshots enquanto faz scroll."""
+        step = client_height - SCROLL_OVERLAP_PX
+        
+        # Volta ao topo
+        await self.page.evaluate(f"""() => {{
+            const el = document.querySelector('{selector}');
+            if (el) el.scrollTop = 0;
+        }}""")
+        await self.page.wait_for_timeout(SCROLL_PAUSE_MS)
+        
+        screenshots = []
+        positions = []
+        current_scroll = 0
+        max_scroll = scroll_height - client_height
+        
+        while True:
+            # Define posição do scroll
+            await self.page.evaluate(f"""(scrollY) => {{
+                const el = document.querySelector('{selector}');
+                if (el) el.scrollTop = scrollY;
+            }}""", current_scroll)
+            await self.page.wait_for_timeout(SCROLL_PAUSE_MS)
+            
+            # Lê posição real
+            actual_scroll = await self.page.evaluate(f"""() => {{
+                const el = document.querySelector('{selector}');
+                return el ? el.scrollTop : 0;
+            }}""")
+            
+            # Captura
+            screenshot = await self.page.screenshot(type="png")
+            screenshots.append(screenshot)
+            positions.append(actual_scroll)
+            
+            logger.debug(f"Captura #{len(screenshots)}: scrollTop={actual_scroll}px")
+            
+            # Próxima posição
+            current_scroll += step
+            
+            # Verifica se chegou no fim
+            if actual_scroll >= max_scroll - 5:
+                break
+            
+            # Safety check
+            if len(screenshots) > 50:
+                logger.warning("Limite de capturas de scroll atingido (50)")
+                break
+        
+        # Volta ao topo
+        await self.page.evaluate(f"""() => {{
+            const el = document.querySelector('{selector}');
+            if (el) el.scrollTop = 0;
+        }}""")
+        
+        return screenshots, positions
+
+    def _stitch_screenshots(self, screenshots, positions, client_height, scroll_height):
+        """Une múltiplas screenshots baseado nas posições de scroll."""
+        images = [Image.open(io.BytesIO(b)) for b in screenshots]
+        
+        width = images[0].width
+        final_height = scroll_height
+        
+        final_image = Image.new("RGB", (width, final_height), (255, 255, 255))
+        
+        for i, (img, scroll_pos) in enumerate(zip(images, positions)):
+            y_in_final = int(scroll_pos)
+            
+            # Quanto da imagem podemos colar
+            available_space = final_height - y_in_final
+            crop_height = min(img.height, available_space)
+            
+            if crop_height > 0:
+                cropped = img.crop((0, 0, width, crop_height))
+                final_image.paste(cropped, (0, y_in_final))
+        
+        return final_image
+
     async def close(self):
+        """Fecha o navegador e libera recursos."""
         if self.context: await self.context.close()
         if self.browser: await self.browser.close()
         if self.playwright: await self.playwright.stop()

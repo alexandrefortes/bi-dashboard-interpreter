@@ -45,8 +45,8 @@ class DashboardCataloger:
                 logger.error("Falha ao carregar dashboard.")
                 return None
 
-            # 2. Captura Inicial
-            initial_bytes = await self.driver.get_screenshot_bytes()
+            # 2. Captura Inicial (com suporte a scroll para páginas longas)
+            initial_bytes = await self.driver.get_full_page_screenshot_bytes()
             initial_pil = bytes_to_image(initial_bytes)
             
             if is_error_screen(initial_pil):
@@ -126,8 +126,8 @@ class DashboardCataloger:
                     wait_time = 3 if attempt_idx == 0 else 2
                     await asyncio.sleep(wait_time)
                     
-                    # Snapshot
-                    shot_bytes = await self.driver.get_screenshot_bytes()
+                    # Snapshot (com suporte a scroll)
+                    shot_bytes = await self.driver.get_full_page_screenshot_bytes()
                     shot_pil = bytes_to_image(shot_bytes)
                     
                     if is_error_screen(shot_pil):
@@ -168,7 +168,7 @@ class DashboardCataloger:
                         clicked_dom = await self.driver.try_click_native_next_button()
                         if clicked_dom:
                             await asyncio.sleep(5)
-                            shot_bytes = await self.driver.get_screenshot_bytes()
+                            shot_bytes = await self.driver.get_full_page_screenshot_bytes()
                             shot_pil = bytes_to_image(shot_bytes)
                             current_hash = compute_phash(shot_pil, nav_type)
                             
