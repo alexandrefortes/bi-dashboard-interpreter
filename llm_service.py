@@ -3,7 +3,7 @@ import logging
 import re
 from google import genai
 from google.genai import types
-from config import GEMINI_API_KEY, MODEL_SCOUT, MODEL_ANALYST
+from config import GEMINI_API_KEY, MODEL_SCOUT, MODEL_ANALYST, VIEWPORT
 
 
 logger = logging.getLogger("Cataloger")
@@ -67,6 +67,9 @@ class GeminiService:
 
         Ignore filtros, slicers de data ou botões de "Voltar".
 
+        IMPORTANTE: Coordenadas devem ser NORMALIZADAS entre 0.0 e 1.0 (proporção da tela).
+        Exemplo: centro da tela = 0.5, 0.5 | canto superior esquerdo = 0.0, 0.0 | canto inferior direito = 1.0, 1.0
+
         Retorne estritamente JSON:
         {
             "nav_type": "native_footer" | "top_tabs" | "left_list" | "none",
@@ -91,11 +94,17 @@ class GeminiService:
             cleaned_text = re.sub(r"```json\s*|\s*```", "", json_text).strip()
             data = json.loads(cleaned_text)
             
-            # Se o modelo devolveu pixels (ex: > 1), normaliza na marra assumindo 1920x1080
-            # ou apenas confia se estiver entre 0 e 1.
-            for target in data.get("targets", []):
-                if target['x'] > 1: target['x'] = target['x'] / 1920
-                if target['y'] > 1: target['y'] = target['y'] / 1080
+            # Se o modelo devolveu pixels (ex: > 1), normaliza usando VIEWPORT
+            targets = data.get("targets", [])
+            needs_conversion = any(t.get('x', 0) > 1 or t.get('y', 0) > 1 for t in targets)
+            
+            if needs_conversion:
+                logger.warning("⚠️ Scout retornou coordenadas em pixels, convertendo para normalizadas...")
+                for target in targets:
+                    if target.get('x', 0) > 1: 
+                        target['x'] = target['x'] / VIEWPORT['width']
+                    if target.get('y', 0) > 1: 
+                        target['y'] = target['y'] / VIEWPORT['height']
                 
             return data
 

@@ -74,16 +74,14 @@ O projeto opera com 3 "personas" de IA sequenciais:
 * *Nativa:* Rodapé do Power BI (ex.: "1 de 5").
 * *Customizada:* Abas desenhadas no relatório (Abas superiores, Menu lateral).
 
-* **Saída:** Lista de coordenadas (x, y) de onde clicar.
+* **Saída:** Lista de coordenadas normalizadas (x, y entre 0.0 e 1.0) de onde clicar, independente da resolução.
 
 ### 2. The Explorer (O Explorador)
 
 * **Função:** Navegar com resiliência.
-* **Lógica de "Círculos Concêntricos":**
-* O robô tenta clicar na coordenada sugerida pelo Scout.
-* Verifica se a tela mudou (usando Hash Visual).
-* **Se falhar:** Expande em círculos concêntricos ao redor do ponto (8 direções por raio: N, NE, E, SE, S, SW, W, NW) até encontrar o alvo.
-* **Fallback (Último recurso):** Se for navegação nativa e o clique visual falhar, ele injeta cliques via DOM (HTML) nos botões do Power BI.
+* **Lógica Híbrida de Navegação:**
+* **Navegação Nativa (Rodapé padrão):** Prioriza **clique direto no DOM** (via seletores CSS/HTML) pela precisão de 100%. Se falhar, recorre ao clique visual.
+* **Navegação Customizada (Abas/Botões):** Usa **círculos concêntricos** baseados na visão (Scout). Tenta clicar na coordenada sugerida e, se falhar, expande em espiral até validar a mudança de tela.
 
 ### 3. The Analyst (O Analista)
 
@@ -109,16 +107,16 @@ O projeto opera com 3 "personas" de IA sequenciais:
 
 ## 📂 Estrutura de Saída
 
-Cada execução cria uma pasta única dentro de `runs/` com o timestamp da execução:
+Cada execução cria uma pasta única dentro de `runs/` com o timestamp da execução e o título do painel:
 
 ```text
 runs/
-└── 20260113_213721/            # ID da Execução (Data_Hora)
-    ├── catalog.json            # O "Ouro": Metadados completos do dashboard
-    └── screenshots/            # Evidências visuais
-        ├── 00_home.png         # Tela inicial
-        ├── 01_target.png       # Página 2 (após clique)
-        ├── 02_target.png       # Página 3 (após clique)
+└── 20260113_213721_Titanic_Dataset/  # ID_Título (sanitizado)
+    ├── catalog_Titanic_Dataset.json  # Metadados com título no nome
+    └── screenshots/                  # Evidências visuais
+        ├── 00_home.png               # Tela inicial
+        ├── 01_target.png             # Página 2 (após clique)
+        ├── 02_target.png             # Página 3 (após clique)
         └── ...
 
 ```

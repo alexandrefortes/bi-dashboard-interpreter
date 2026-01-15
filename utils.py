@@ -73,6 +73,32 @@ def compute_phash(pil_image, nav_type="default"):
     roi = crop_roi_image(pil_image, nav_type)
     return imagehash.phash(roi)
 
+def sanitize_filename(title: str, max_length: int = 50) -> str:
+    """
+    Converte um título em nome de arquivo seguro.
+    
+    - Remove caracteres especiais (mantém letras, números, espaços, hífens)
+    - Substitui espaços por underscore
+    - Limita tamanho
+    - Retorna string vazia se título for inválido
+    """
+    if not title or title == "Sem título":
+        return ""
+    
+    # Remove caracteres não permitidos em nomes de arquivo
+    safe = re.sub(r'[<>:"/\\|?*]', '', title)
+    # Substitui espaços e múltiplos underscores
+    safe = re.sub(r'\s+', '_', safe.strip())
+    safe = re.sub(r'_+', '_', safe)
+    # Remove underscores no início/fim
+    safe = safe.strip('_')
+    # Limita tamanho
+    if len(safe) > max_length:
+        safe = safe[:max_length].rstrip('_')
+    
+    return safe
+
+
 def is_error_screen(pil_image):
     """
     Heurística ajustada: tolerar mais branco.
@@ -86,3 +112,7 @@ def is_error_screen(pil_image):
     
     # Se >98% branco = provável erro
     return (white > 9500)
+
+def clamp(value, min_val=0, max_val=1):
+    """Restringe um valor entre min_val e max_val."""
+    return max(min_val, min(max_val, value))

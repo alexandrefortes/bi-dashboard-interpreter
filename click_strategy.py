@@ -9,7 +9,7 @@ import asyncio
 from dataclasses import dataclass
 from typing import List, Tuple, Optional
 
-from utils import setup_logger, bytes_to_image, compute_phash, is_error_screen
+from utils import setup_logger, bytes_to_image, compute_phash, is_error_screen, clamp
 from config import DUPLICATE_THRESHOLD
 
 logger = setup_logger("ClickStrategy")
@@ -121,8 +121,8 @@ class ConcentricSearchClicker:
         for attempt_idx, (off_x, off_y) in enumerate(self.offsets):
             # Converte offset de pixels para porcentagem
             pct_off_x, pct_off_y = self._pixel_to_percentage(off_x, off_y)
-            adj_x = target_x + pct_off_x
-            adj_y = target_y + pct_off_y
+            adj_x = clamp(target_x + pct_off_x)
+            adj_y = clamp(target_y + pct_off_y)
             
             if attempt_idx > 0:
                 logger.info(f"🔄 Tentativa {attempt_idx} (Offset {off_x}px, {off_y}px)...")
@@ -217,7 +217,7 @@ class DOMFallbackClicker:
         Returns:
             ClickResult indicando sucesso/falha.
         """
-        logger.info("🚑 Tentando resgate com clique nativo via DOM...")
+        logger.info("🖱️ Tentando clique nativo via DOM (Estratégia Primária)...")
         
         clicked = await self.driver.try_click_native_next_button()
         
@@ -231,7 +231,7 @@ class DOMFallbackClicker:
         current_hash = compute_phash(shot_pil, nav_type)
         
         if not self._is_duplicate(current_hash, seen_hashes):
-            logger.info("✅ Resgate DOM funcionou!")
+            logger.info("✅ Clique DOM funcionou!")
             
             # Aguarda estabilização visual antes da captura final
             await self.driver._wait_for_visual_stability(

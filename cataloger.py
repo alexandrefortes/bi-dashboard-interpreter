@@ -4,7 +4,7 @@ from pathlib import Path
 from datetime import datetime
 
 from config import OUTPUT_DIR, DUPLICATE_THRESHOLD, VIEWPORT, CLICK_ATTEMPT_OFFSETS
-from utils import setup_logger, bytes_to_image, compute_phash, is_error_screen, parse_page_count
+from utils import setup_logger, bytes_to_image, compute_phash, is_error_screen, parse_page_count, sanitize_filename
 from bot_core import BrowserDriver
 from llm_service import GeminiService
 from click_strategy import ConcentricSearchClicker, DOMFallbackClicker
@@ -107,16 +107,23 @@ class DashboardCataloger:
             for i, target in enumerate(targets):
                 logger.info(f"--- Explorando alvo {i+1}/{len(targets)}: {target.get('label')} ---")
 
-                # Tenta clique com estratégia Cross Search
-                result = await clicker.click_with_retry(
-                    target['x'], target['y'],
-                    self.seen_hashes,
-                    nav_type
-                )
-                
-                # Se falhou e é navegação nativa, tenta fallback DOM
-                if not result.success and nav_type == "native_footer":
-                    result = await dom_fallback.try_dom_click(
+                # Lógica de Clique: DOM Primeiro para Nativo, Visual Primeiro para Customizado
+                if nav_type == "native_footer":
+                    # TENTATIVA 1: Clique Nativo (DOM)
+                    result = await dom_fallback.try_dom_click(self.seen_hashes, nav_type)
+                    
+                    # TENTATIVA 2: Fallback Visual (apenas se DOM falhar)
+                    if not result.success:
+                        logger.warning(f"⚠️ Clique nativo falhou para '{target.get('label')}'. Tentando visual...")
+                        result = await clicker.click_with_retry(
+                            target['x'], target['y'],
+                            self.seen_hashes,
+                            nav_type
+                        )
+                else:
+                    # Lógica Padrão (Visual Primeiro)
+                    result = await clicker.click_with_retry(
+                        target['x'], target['y'],
                         self.seen_hashes,
                         nav_type
                     )
@@ -155,8 +162,27 @@ class DashboardCataloger:
                 }
                 catalog_data["pages"].append(page_record)
 
-            # 6. Output Final
-            json_path = run_dir / "catalog.json"
+            # 6. Output Final - Com título no nome da pasta e arquivo
+            titulo_painel = ""
+            if catalog_data["pages"]:
+                titulo_painel = catalog_data["pages"][0].get("analysis", {}).get("titulo_painel", "")
+            
+            titulo_safe = sanitize_filename(titulo_painel)
+            
+            # Renomeia a pasta para incluir o título
+            if titulo_safe:
+                new_run_dir = Path(OUTPUT_DIR) / f"{run_id}_{titulo_safe}"
+                try:
+                    run_dir.rename(new_run_dir)
+                    run_dir = new_run_dir
+                    logger.info(f"Pasta renomeada para: {run_dir.name}")
+                except Exception as e:
+                    logger.warning(f"Não foi possível renomear pasta: {e}")
+            
+            # Nome do catalog.json com título
+            catalog_filename = f"catalog_{titulo_safe}.json" if titulo_safe else "catalog.json"
+            json_path = run_dir / catalog_filename
+            
             with open(json_path, "w", encoding="utf-8") as f:
                 json.dump(catalog_data, f, indent=2, ensure_ascii=False)
             

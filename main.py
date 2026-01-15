@@ -45,7 +45,7 @@ async def main():
                 paginas = result.get('pages', [])
                 titulo = "Sem título"
                 if paginas and 'analysis' in paginas[0]:
-                    titulo = paginas[0]['analysis'].get('titulo', 'Sem título')
+                    titulo = paginas[0]['analysis'].get('titulo_painel', 'Sem título')
                 
                 print(f"   ✅ Sucesso! {len(paginas)} páginas encontradas.")
                 print(f"   📄 Título: {titulo}")
