@@ -28,7 +28,7 @@ O código segue princípios de responsabilidade única:
 * **`bot_core.py`**: Camada de abstração do Playwright.
 * **`config.py`**: Centralização de constantes e ajustes finos.
 
-## 🧪 Dashboards de exemplo (para testes)
+## 🧪 Dashboards utilizados nos testes
 
 * [Financial Performance Dashboard](https://community.fabric.microsoft.com/t5/Themes-Gallery/Financial-Performance-Dashboard/m-p/4901530), por Arbaz_Ahmad (Fabric Community Themes Gallery)
 * [Marketing Campaign Analysis Dashboard](https://community.fabric.microsoft.com/t5/Themes-Gallery/Marketing-Campaign-Analysis-Dashboard/td-p/4887536), por visually (Fabric Community Themes Gallery)
@@ -65,7 +65,7 @@ Gere o arquivo de URLs (via notebook `bi-dashboard-interpreter.ipynb` ou manualm
 python main.py
 ```
 
-## 🔐 Ambientes com Login (MFA/SSO)
+## 🔐 Ambientes com login (MFA/SSO)
 
 O robô foi desenhado para atuar em colaboração com o humano ("Human-in-the-loop") para operar em ambientes com SSO/MFA com participação do usuário autenticado.
 
