@@ -12,7 +12,8 @@ Este projeto utiliza IA Multimodal (Gemini 2.5) e Automação de Navegador (Play
 
 O código segue princípios de responsabilidade única:
 * **`main.py`**: Orquestrador de entrada.
-* **`cataloger.py`**: Lógica de fluxo (Batedor -> Explorador -> Analista).
+* **`cataloger.py`**: Orquestrador do fluxo (Coordena Batedor, Explorador e Analista).
+* **`explorer.py`**: Motor de navegação e exploração de páginas (Gerencia cliques e deduplicação).
 * **`click_strategy.py`**: Estratégias de clique com retries (Círculos Concêntricos, DOM Fallback).
 * **`llm_service.py`**: Integração com Google GenAI (Gemini).
 * **`bot_core.py`**: Camada de abstração do Playwright.
