@@ -172,6 +172,7 @@ Abaixo, um exemplo real de como o agente interpreta uma tela.
 **Entrada (Screenshot capturado automaticamente):**
 
 ![Exemplo de Dashboard - Media Analytics](hello-world/sample.png)
+* [Marketing Campaign Analysis Dashboard](https://community.fabric.microsoft.com/t5/Themes-Gallery/Marketing-Campaign-Analysis-Dashboard/td-p/4887536), por visually (Fabric Community Themes Gallery)
 
 **Saída (JSON gerado pelo Agente):**
 
