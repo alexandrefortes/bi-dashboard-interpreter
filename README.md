@@ -13,6 +13,8 @@ Este projeto utiliza IA Multimodal (Gemini 2.5 pro) e Automação de Navegador (
 Este repositório nasceu como um estudo pessoal feito durante as férias, no meu tempo livre.
 Não foi desenvolvido a pedido de terceiros, nem como parte de um projeto contratado.
 
+> *Apesar de ser um projeto de *estudo*, ele resolve um problema real: a catalogação manual de painéis de BI é trabalhosa, desatualiza rapidamente e dificulta a descoberta de dados (data discovery). Este projeto automatiza esse processo.*
+
 
 ## 🧱 Modularização
 
