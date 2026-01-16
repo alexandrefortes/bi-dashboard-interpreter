@@ -381,4 +381,4 @@ Consulte o arquivo [LICENSE](LICENSE) para mais detalhes.
 A licença garante:
 * ✅ Uso comercial livre.
 * ✅ Modificação e distribuição permitidas.
-* 🛡️ **Proteção contra processos de patentes**.
+* 🛡️ Proteção contra processos de patentes.
