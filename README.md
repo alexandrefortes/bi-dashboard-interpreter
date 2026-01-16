@@ -159,33 +159,47 @@ runs/
 
 ```
 
-### Exemplo de `catalog.json`
+### Exemplo de Saída Real (The Analyst)
 
-O arquivo JSON final consolida a navegação técnica e a análise de negócios. Exemplo:
+Abaixo, um exemplo real de como o agente interpreta uma tela.
+
+**Entrada (Screenshot capturado automaticamente):**
+
+![Exemplo de Dashboard - Media Analytics](hello-world/sample.png)
+
+**Saída (JSON gerado pelo Agente):**
 
 ```json
 {
-  "url": "[https://app.powerbi.com/](https://app.powerbi.com/)...",
-  "pages": [
-    {
-      "id": 0,
-      "label": "Home",
-      "analysis": {
-        "titulo_painel": "Titanic Dataset Analysis",
-        "objetivo_macro": "Análise exploratória de fatores de sobrevivência...",
-        "perguntas_respondidas": [
-          "Qual a taxa de sobrevivência por gênero?",
-          "A classe da passagem influencia na sobrevivência?"
-        ],
-        "publico_sugerido": "Cientista de Dados"
-      }
-    }
-  ]
+  "id": 1,
+  "label": "Next Page (1/2)",
+  "filename": "01_target.png",
+  "analysis": {
+    "titulo_painel": "Media Analytics",
+    "objetivo_macro": "Monitorar e comparar a performance de campanhas de mídia paga entre diferentes plataformas digitais, analisando a evolução dos principais indicadores em relação ao período anterior.",
+    "perguntas_respondidas": [
+      "Qual plataforma de mídia digital apresenta o melhor Custo por Clique (CPC) no período selecionado?",
+      "Como o investimento (Spend) e o volume de cliques se comparam entre Google, Meta e LinkedIn?",
+      "Qual a tendência diária das impressões do mês atual em comparação com o mês anterior para cada plataforma?",
+      "Qual foi a variação percentual dos indicadores de performance (Spend, Clicks, CPC) em relação ao mês anterior?"
+    ],
+    "dominio_negocio": "Marketing",
+    "elementos_visuais": "Estrutura de cartões comparativos, um para cada plataforma de mídia. Cada cartão contém um gráfico de linhas para análise de tendência temporal (mês atual vs. anterior) e um conjunto de cartões de KPI para os principais indicadores de performance.",
+    "filtros_visiveis": [
+      "Mês"
+    ],
+    "principais_indicadores": [
+      "Spend (Investimento)",
+      "Clicks (Cliques)",
+      "CPC (Custo por Clique)",
+      "Impressions (Impressões)"
+    ],
+    "publico_sugerido": "Analista de Mercado"
+  }
 }
-
 ```
 
-### Exemplos de saída do Scout
+### Exemplos de saída do Scout (Navegação)
 
 Quando o Scout analisa a imagem, ele retorna uma **reflexão (`nav_reflection`)** justificando a decisão, o que ajuda na auditabilidade do processo.
 
@@ -216,6 +230,22 @@ Quando o Scout analisa a imagem, ele retorna uma **reflexão (`nav_reflection`)*
     ]
 }
 ```
+
+---
+
+## 💡 Potencial de Uso (Casos de Uso)
+
+Os dados estruturados gerados por este interpretador habilitam aplicações poderosas:
+
+### 1. Catálogo de Dados Inteligente
+Alimente ferramentas de governança (como DataHub, Amundsen ou Notion) com metadados ricos e **prints atualizados** automaticamente, eliminando a documentação manual desatualizada.
+
+### 2. Chatbot de Data Discovery (RAG)
+Crie um assistente que ajuda usuários a encontrar o painel certo via chat natural:
+*   **Input:** *"Onde vejo a performance de vendas por região?"*
+*   **Matching:** Um modelo LLM compara a pergunta do usuário com o campo `perguntas_respondidas` do JSON gerado.
+*   **Resposta:** *"Recomendo o painel **Sales Overview**. Ele responde 'Qual a performance regional?'. Veja uma prévia:"*
+*   **Visual:** Exibe a imagem `00_home.png` para o usuário confirmar antes de clicar no link.
 
 ---
 
