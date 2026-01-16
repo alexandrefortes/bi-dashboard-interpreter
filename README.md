@@ -129,9 +129,10 @@ Somente após o sucesso de todas as etapas a pasta é renomeada de `wip_<hash>` 
 Para processar múltiplas URLs simultaneamente e reduzir o tempo total, utilize o script `batch_main.py`.
 
 ### Diferenciais do Modo Batch
-*   **Concorrência Controlada:** Processa 3 (configurável) painéis por vez.
+*   **Concorrência Controlada:** Processa múltiplos painéis por vez (configurável via `MAX_CONCURRENT_TASKS` em `config.py`).
 *   **Navegador Compartilhado:** Abre apenas **uma instância** do Chromium e cria abas isoladas (contextos) para cada painel, economizando RAM por worker.
-*   **Segurança (Thread-safe):** Utiliza travas (`asyncio.Lock`) para garantir que o arquivo de histórico (`processed_urls.json`) não seja corrompido por escritas simultâneas.
+*   **Logs Contextuais:** O terminal exibe logs com identificadores únicos (ex: `[Worker-1]`, `[Worker-2]`) para facilitar o debug em paralelo.
+*   **Segurança (Thread-safe):** Utiliza travas (`asyncio.Lock`) para garantir que o arquivo de histórico (`processed_urls.json`) não seja corrompido.
 
 ### Como executar
 ```bash
@@ -226,6 +227,7 @@ Você pode ajustar a sensibilidade do robô:
 * Por padrão: centro + 4 anéis × 8 direções = **33 pontos de tentativa**.
 * Configurável via `_generate_concentric_offsets(max_radius, step)` em `config.py`.
 
+* **`MAX_CONCURRENT_TASKS`**: Define quantos painéis serão processados simultaneamente no `batch_main.py` (padrão: 2). Ajuste conforme a RAM disponível.
 * **`ROI_CROP`**: Define áreas da tela para ignorar no cálculo de duplicidade (ex: ignorar rodapé que contém relógio ou número de página, focando só nos gráficos).
 
 ## 🛠️ Solução de Problemas
