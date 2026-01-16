@@ -263,7 +263,7 @@ Crie um assistente que ajuda usuários a encontrar o painel certo via chat natur
 
 > **Pergunta do Usuário:** *"Estou precisando de dados sobre performance de marketing digital. Existe algum painel sobre isso?"*
 
-<img src="hello-world/sample_rag_response.png" width="500">
+![Exemplo de resposta do Chatbot RAG](hello-world/sample_rag_response.png)
 
 ### 3. Detecção de Painéis Redundantes
 Identifique dashboards duplicados ou sobrepostos automaticamente:
