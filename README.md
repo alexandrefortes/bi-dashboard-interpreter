@@ -14,7 +14,7 @@ Este repositório nasceu como um estudo pessoal feito durante as férias, no meu
 Não foi desenvolvido a pedido de terceiros, nem como parte de um projeto contratado.
 
 
-## 🧱 Modularização
+## Modularização
 
 O código segue princípios de responsabilidade única:
 * **`main.py`**: Orquestrador de entrada (Execução sequencial).
