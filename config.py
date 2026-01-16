@@ -27,6 +27,10 @@ MAX_CONCURRENT_TASKS = 2 # Ajuste conforme memória disponível
 # Configurações de Viewport (Seguindo seu playwright_bot.py)
 VIEWPORT = {'width': 1920, 'height': 1080}
 
+# Configurações de Resiliência do LLM
+LLM_MAX_RETRIES = 3    # Tentativas máximas em caso de falha
+LLM_BASE_DELAY = 1     # Delay base em segundos (backoff: 1s, 2s, 4s)
+
 # Configurações de Navegação e Resiliência
 # Offsets em círculos concêntricos (centro + 4 anéis × 8 direções = 33 pontos)
 # Mais robusto que cruz fixa para alvos pequenos

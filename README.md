@@ -260,11 +260,15 @@ Crie um assistente que ajuda usuários a encontrar o painel certo via chat natur
 Você pode ajustar a sensibilidade do robô:
 
 * **`CLICK_ATTEMPT_OFFSETS`**: Lista de offsets gerada dinamicamente em círculos concêntricos.
-* Por padrão: centro + 4 anéis × 8 direções = **33 pontos de tentativa**.
-* Configurável via `_generate_concentric_offsets(max_radius, step)` em `config.py`.
+  * Por padrão: centro + 4 anéis × 8 direções = **33 pontos de tentativa**.
+  * Configurável via `_generate_concentric_offsets(max_radius, step)` em `config.py`.
 
 * **`MAX_CONCURRENT_TASKS`**: Define quantos painéis serão processados simultaneamente no `batch_main.py` (padrão: 2). Ajuste conforme a RAM disponível.
 * **`ROI_CROP`**: Define áreas da tela para ignorar no cálculo de duplicidade (ex: ignorar rodapé, focando só nos gráficos).
+* **`LLM_MAX_RETRIES`**: Número máximo de tentativas em caso de falha na API do Gemini (padrão: 3).
+* **`LLM_BASE_DELAY`**: Delay base em segundos para backoff exponencial (padrão: 1s → delays de 1s, 2s, 4s).
+  * Recupera automaticamente de erros transientes: rate limit, timeout, erro 500.
+  * Tempo máximo de espera: ~7s antes de desistir.
 
 ## 🛠️ Solução de Problemas
 

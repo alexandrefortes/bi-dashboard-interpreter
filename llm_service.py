@@ -1,10 +1,11 @@
 import json
 import logging
+import time
 from typing import List, Dict, Any, Optional
 from google import genai
 from google.genai import types
 from google.genai.errors import APIError, ClientError
-from config import GEMINI_API_KEY, MODEL_SCOUT, MODEL_ANALYST, VIEWPORT
+from config import GEMINI_API_KEY, MODEL_SCOUT, MODEL_ANALYST, VIEWPORT, LLM_MAX_RETRIES, LLM_BASE_DELAY
 
 
 logger = logging.getLogger("Cataloger")
@@ -23,45 +24,55 @@ class GeminiService:
         image_bytes: bytes, 
         response_schema: Optional[Dict[str, Any]] = None
     ) -> Optional[str]:
-        """Método genérico para chamar a API nova do Google GenAI."""
-        try:
-            image_part = types.Part.from_bytes(
-                data=image_bytes,
-                mime_type="image/png"
-            )
-            
-            text_part = types.Part.from_text(text=prompt_text)
-            
-            contents = [
-                types.Content(
-                    role="user",
-                    parts=[text_part, image_part]
+        """Método genérico para chamar a API do Google GenAI com retry automático."""
+        
+        for attempt in range(LLM_MAX_RETRIES):
+            try:
+                image_part = types.Part.from_bytes(
+                    data=image_bytes,
+                    mime_type="image/png"
                 )
-            ]
+                
+                text_part = types.Part.from_text(text=prompt_text)
+                
+                contents = [
+                    types.Content(
+                        role="user",
+                        parts=[text_part, image_part]
+                    )
+                ]
 
-            # Configuração de geração
-            generate_config = types.GenerateContentConfig(
-                response_mime_type="application/json" if response_schema else "text/plain",
-                response_schema=response_schema
-            )
+                # Configuração de geração
+                generate_config = types.GenerateContentConfig(
+                    response_mime_type="application/json" if response_schema else "text/plain",
+                    response_schema=response_schema
+                )
 
-            response = self.client.models.generate_content(
-                model=model_name,
-                contents=contents,
-                config=generate_config
-            )
+                response = self.client.models.generate_content(
+                    model=model_name,
+                    contents=contents,
+                    config=generate_config
+                )
 
-            return response.text
+                return response.text
 
-        except APIError as e:
-            logger.error(f"Erro de API do Google ({model_name}): {e.message} (Status: {e.code})")
-            return None
-        except ClientError as e:
-            logger.error(f"Erro no Cliente Gemini ({model_name}): {e}")
-            return None
-        except Exception as e:
-            logger.error(f"Erro inesperado na chamada LLM ({model_name}): {e}")
-            return None
+            except (APIError, ClientError) as e:
+                delay = LLM_BASE_DELAY * (2 ** attempt)  # Backoff: 1s, 2s, 4s
+                error_msg = getattr(e, 'message', str(e))
+                
+                if attempt < LLM_MAX_RETRIES - 1:
+                    logger.warning(f"⚠️ Tentativa {attempt + 1}/{LLM_MAX_RETRIES} falhou ({model_name}): {error_msg}. Retry em {delay}s...")
+                    time.sleep(delay)
+                else:
+                    logger.error(f"❌ Todas as {LLM_MAX_RETRIES} tentativas falharam ({model_name}): {error_msg}")
+                    return None
+                    
+            except Exception as e:
+                # Erros inesperados não fazem retry (podem ser bugs no código)
+                logger.error(f"❌ Erro inesperado na chamada LLM ({model_name}): {e}")
+                return None
+        
+        return None
 
     def discover_navigation(self, image_bytes: bytes) -> Dict[str, Any]:
         """Estágio B: Identifica elementos de navegação com prioridade para paginação nativa."""
