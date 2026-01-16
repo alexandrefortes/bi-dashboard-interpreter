@@ -11,7 +11,8 @@ Este projeto utiliza IA Multimodal (Gemini 2.5) e Automação de Navegador (Play
 ## 🧱 Modularização
 
 O código segue princípios de responsabilidade única:
-* **`main.py`**: Orquestrador de entrada.
+* **`main.py`**: Orquestrador de entrada (Execução sequencial).
+* **`batch_main.py`**: Orquestrador de alta performance (Execução paralela/assíncrona).
 * **`cataloger.py`**: Orquestrador do fluxo (Coordena Batedor, Explorador e Analista).
 * **`explorer.py`**: Motor de navegação e exploração de páginas (Gerencia cliques e deduplicação).
 * **`click_strategy.py`**: Estratégias de clique com retries (Círculos Concêntricos, DOM Fallback).
@@ -120,6 +121,24 @@ Ao processar uma URL, é criada uma pasta de trabalho temporária (`runs/wip_<ha
 
 ### Finalização
 Somente após o sucesso de todas as etapas a pasta é renomeada de `wip_<hash>` para o formato final `DATA_Titulo`.
+
+---
+
+## ⚡ Execução em Lote (Alta Performance)
+
+Para processar múltiplas URLs simultaneamente e reduzir o tempo total, utilize o script `batch_main.py`.
+
+### Diferenciais do Modo Batch
+*   **Concorrência Controlada:** Processa 3 (configurável) painéis por vez.
+*   **Navegador Compartilhado:** Abre apenas **uma instância** do Chromium e cria abas isoladas (contextos) para cada painel, economizando RAM por worker.
+*   **Segurança (Thread-safe):** Utiliza travas (`asyncio.Lock`) para garantir que o arquivo de histórico (`processed_urls.json`) não seja corrompido por escritas simultâneas.
+
+### Como executar
+```bash
+python batch_main.py
+```
+
+> **Nota:** Certifique-se de que o arquivo `urls.json` esteja populado corretamente.
 
 ---
 

@@ -20,11 +20,16 @@ class BrowserDriver:
         self.context = None
         self.page = None
 
-    async def start(self, headless: bool = True) -> None:
-        """Inicia o Playwright."""
-        self.playwright = await async_playwright().start()
-        logger.info(f"Iniciando navegador (Headless: {headless})...")
-        self.browser = await self.playwright.chromium.launch(headless=headless)
+    async def start(self, headless: bool = True, browser_instance: Any = None) -> None:
+        """Inicia o Playwright (ou anexa a um browser existente)."""
+        if browser_instance:
+            logger.info("Anexando a navegador compartilhado...")
+            self.browser = browser_instance
+            # Não iniciamos self.playwright aqui pois é gerenciado externamente
+        else:
+            self.playwright = await async_playwright().start()
+            logger.info(f"Iniciando navegador dedicado (Headless: {headless})...")
+            self.browser = await self.playwright.chromium.launch(headless=headless)
         
         # Cria contexto com Full HD forçado
         self.context = await self.browser.new_context(viewport=VIEWPORT)
@@ -331,9 +336,14 @@ class BrowserDriver:
 
     async def close(self) -> None:
         """Fecha o navegador e libera recursos."""
-        if self.context: await self.context.close()
-        if self.browser: await self.browser.close()
-        if self.playwright: await self.playwright.stop()
+        if self.context: 
+            await self.context.close()
+        
+        # Só fechamos o browser/playwright se nós o criamos (self.playwright existe)
+        if self.playwright:
+            if self.browser: 
+                await self.browser.close()
+            await self.playwright.stop()
     
     async def try_click_native_next_button(self) -> bool:
         """

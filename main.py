@@ -25,6 +25,15 @@ def load_urls():
 
 async def main():
     urls_para_processar = load_urls()
+    
+    # Deduplicação (mantendo ordem)
+    seen = set()
+    unique_urls = []
+    for u in urls_para_processar:
+        if u not in seen:
+            unique_urls.append(u)
+            seen.add(u)
+    urls_para_processar = unique_urls
 
     if not urls_para_processar:
         print("❌ Nenhuma URL encontrada!")

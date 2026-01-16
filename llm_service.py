@@ -3,6 +3,7 @@ import logging
 from typing import List, Dict, Any, Optional
 from google import genai
 from google.genai import types
+from google.genai.errors import APIError, ClientError
 from config import GEMINI_API_KEY, MODEL_SCOUT, MODEL_ANALYST, VIEWPORT
 
 
@@ -52,8 +53,14 @@ class GeminiService:
 
             return response.text
 
+        except APIError as e:
+            logger.error(f"Erro de API do Google ({model_name}): {e.message} (Status: {e.code})")
+            return None
+        except ClientError as e:
+            logger.error(f"Erro no Cliente Gemini ({model_name}): {e}")
+            return None
         except Exception as e:
-            logger.error(f"Erro na chamada LLM ({model_name}): {e}")
+            logger.error(f"Erro inesperado na chamada LLM ({model_name}): {e}")
             return None
 
     def discover_navigation(self, image_bytes: bytes) -> Dict[str, Any]:

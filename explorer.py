@@ -83,7 +83,7 @@ class DashboardExplorer:
                 "label": target.get("label", f"Page {i+1}"),
                 "bytes": result.screenshot_bytes,
                 "filename": filename,
-                "hash": result.phash
+                "hash": str(result.phash)
             })
 
         return new_pages

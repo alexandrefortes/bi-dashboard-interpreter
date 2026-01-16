@@ -1,6 +1,8 @@
 import hashlib
 import json
 import shutil
+import asyncio
+from typing import Optional, Any
 from pathlib import Path
 from datetime import datetime
 
@@ -13,8 +15,10 @@ from explorer import DashboardExplorer
 logger = setup_logger("Cataloger")
 
 class DashboardCataloger:
-    def __init__(self):
+    def __init__(self, shared_browser: Any = None, file_lock: Optional[asyncio.Lock] = None):
         self.driver = BrowserDriver()
+        self.shared_browser = shared_browser
+        self.file_lock = file_lock
         self.llm = GeminiService()
         self.processed_urls_file = Path(OUTPUT_DIR) / "processed_urls.json"
         
@@ -29,8 +33,16 @@ class DashboardCataloger:
                 return {}
         return {}
 
-    def _mark_as_processed(self, url, run_id, log_path):
-        """Marca URL como processada."""
+    async def _mark_as_processed(self, url, run_id, log_path):
+        """Marca URL como processada (Thread-safe com asyncio.Lock)."""
+        if self.file_lock:
+            async with self.file_lock:
+                await self._write_processed_entry(url, run_id, log_path)
+        else:
+             await self._write_processed_entry(url, run_id, log_path)
+
+    async def _write_processed_entry(self, url, run_id, log_path):
+        """Escrita real no arquivo."""
         data = self._load_processed_urls()
         data[url] = {
             "processed_at": datetime.now().isoformat(),
@@ -77,20 +89,24 @@ class DashboardCataloger:
             if scout_checkpoint.exists():
                 logger.info("💾 Checkpoint do Scout encontrado. Carregando...")
                 try:
-                    nav_data = json.loads(scout_checkpoint.read_text(encoding='utf-8'))
-                    run_id = nav_data.get("_meta_run_id", datetime.now().strftime("%Y%m%d_%H%M%S"))
-                    
-                    # Tenta carregar imagem inicial se existir
-                    if (img_dir / "00_home.png").exists():
+                    # Verificação de integridade: A imagem home precisa existir
+                    if not (img_dir / "00_home.png").exists():
+                        logger.warning("⚠️ Checkpoint do Scout existe, mas '00_home.png' sumiu! Reiniciando fase.")
+                        nav_data = None # Força reinício
+                    else:
+                        nav_data = json.loads(scout_checkpoint.read_text(encoding='utf-8'))
+                        run_id = nav_data.get("_meta_run_id", datetime.now().strftime("%Y%m%d_%H%M%S"))
+                        
                         initial_bytes = (img_dir / "00_home.png").read_bytes()
                         initial_pil = bytes_to_image(initial_bytes)
                 except Exception as e:
                     logger.warning(f"Erro ao ler checkpoint do Scout: {e}. Reiniciando fase.")
+                    nav_data = None
             
             # Se não recuperou nav_data, roda o fluxo normal
             if not nav_data:
                 logger.info("Iniciando navegação (Browser)...")
-                await self.driver.start(headless=False)
+                await self.driver.start(headless=False, browser_instance=self.shared_browser)
                 success = await self.driver.navigate_and_stabilize(url)
                 if not success:
                     logger.error("Falha ao carregar dashboard.")
@@ -143,7 +159,7 @@ class DashboardCataloger:
             if not pages_to_analyze:
                 # Garante driver aberto se não veio do fluxo anterior (ex: crashou após Scout)
                 if not self.driver.page: 
-                     await self.driver.start(headless=False)
+                     await self.driver.start(headless=False, browser_instance=self.shared_browser)
                      # Precisamos re-navegar se o driver reiniciou? 
                      # Se já passamos do Scout, teoricamente sim, mas o Explorer precisa estar na página?
                      # O Explorer clica. Então SIM, precisa estar na página inicial.
@@ -249,7 +265,7 @@ class DashboardCataloger:
                 
                  # Caminho atualizado do json
                 final_json_path = final_run_dir / catalog_filename
-                self._mark_as_processed(url, run_id, final_json_path)
+                await self._mark_as_processed(url, run_id, final_json_path)
                 
                 return catalog_data
 
