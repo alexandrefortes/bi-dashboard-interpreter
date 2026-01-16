@@ -2,11 +2,17 @@
 
 # bi-dashboard-interpreter
 
-*A focused crawler for BI dashboards (UI-level, non-invasive).*
+*A visual-first cataloger for BI dashboards (UI automation + multimodal AI).*
 
-Este projeto utiliza IA Multimodal (Gemini 2.5) e Automação de Navegador (Playwright) para navegar, capturar e documentar funcionalmente painéis de Business Intelligence (Power BI, etc.) automaticamente.
+Este projeto utiliza IA Multimodal (Gemini 2.5 pro) e Automação de Navegador (Playwright) para navegar, capturar e documentar funcionalmente painéis de Business Intelligence (Power BI, etc.) automaticamente.
 
-> **Nota de uso:** Execute apenas com credenciais próprias e em conteúdos cuja captura/armazenamento (prints e metadados) seja permitido pelas políticas do ambiente.
+> Execute apenas com credenciais próprias e em conteúdos cuja captura/armazenamento (prints e metadados) seja permitido pelas políticas do ambiente.
+
+## 📌 Nota de contexto
+
+Este repositório nasceu como um estudo pessoal feito durante as férias, no meu tempo livre.
+Não foi desenvolvido a pedido de terceiros, nem como parte de um projeto contratado.
+
 
 ## 🧱 Modularização
 
@@ -76,20 +82,20 @@ O projeto opera com 3 "personas" de IA sequenciais:
 * *Nativa:* Rodapé do Power BI (ex.: "1 de 5").
 * *Customizada:* Abas desenhadas no relatório (Abas superiores, Menu lateral).
 
-* **Saída:** Lista de coordenadas normalizadas (x, y entre 0.0 e 1.0) de onde clicar, independente da resolução.
+* **Saída:** Lista de coordenadas normalizadas (x, y entre 0.0 e 1.0) de onde clicar.
 
 ### 2. The Explorer (O Explorador)
 
 * **Função:** Navegar com resiliência.
 * **Lógica Híbrida de Navegação:**
 * **Navegação Nativa (Rodapé padrão):** Prioriza **clique direto no DOM** (via seletores CSS/HTML) pela precisão de 100%. Se falhar, recorre ao clique visual.
-* **Navegação Customizada (Abas/Botões):** Usa **círculos concêntricos** baseados na visão (Scout). Tenta clicar na coordenada sugerida e, se falhar, expande em espiral até validar a mudança de tela.
+* **Navegação Customizada (Abas/Botões):** Usa **círculos concêntricos** baseados na visão (Scout). Tenta clicar na coordenada sugerida e, se falhar, expande círculos até validar a mudança de tela.
 
 ### 3. The Analyst (O Analista)
 
 * **Função:** Documentação de Negócio.
 * **Lógica:** Analisa apenas as páginas únicas validadas.
-* **Saída:** Gera descrições funcionais (título, objetivo, filtros, público-alvo) ignorando dados voláteis (números do dia), focando na estrutura analítica.
+* **Saída:** Gera descrições funcionais (título, objetivo, filtros, público-alvo) ignorando dados voláteis (números do dia), focando na estrutura analítica (o que o painel diz).
 
 ### Adendo sobre captura de tela:
 
@@ -139,7 +145,7 @@ Para processar múltiplas URLs simultaneamente e reduzir o tempo total, utilize 
 python batch_main.py
 ```
 
-> **Nota:** Certifique-se de que o arquivo `urls.json` esteja populado corretamente.
+> **Nota:** Certifique-se de que o arquivo `urls.json` esteja populado corretamente. Basta rodar o notebook `bi-dashboard-interpreter.ipynb`.
 
 ---
 
@@ -235,7 +241,7 @@ Quando o Scout analisa a imagem, ele retorna uma **reflexão (`nav_reflection`)*
 
 ## 💡 Potencial de Uso (Casos de Uso)
 
-Os dados estruturados gerados por este interpretador habilitam aplicações poderosas:
+Os dados estruturados gerados por este interpretador habilitam aplicações como:
 
 ### 1. Catálogo de Dados Inteligente
 Alimente ferramentas de governança (como DataHub, Amundsen ou Notion) com metadados ricos e **prints atualizados** automaticamente, eliminando a documentação manual desatualizada.
@@ -245,7 +251,7 @@ Crie um assistente que ajuda usuários a encontrar o painel certo via chat natur
 *   **Input:** *"Onde vejo a performance de vendas por região?"*
 *   **Matching:** Um modelo LLM compara a pergunta do usuário com o campo `perguntas_respondidas` do JSON gerado.
 *   **Resposta:** *"Recomendo o painel **Sales Overview**. Ele responde 'Qual a performance regional?'. Veja uma prévia:"*
-*   **Visual:** Exibe a imagem `00_home.png` para o usuário confirmar antes de clicar no link.
+*   **Visual:** Exibe (se permitido) a imagem `00_home.png` para o usuário confirmar antes de clicar no link.
 
 ---
 
@@ -258,12 +264,12 @@ Você pode ajustar a sensibilidade do robô:
 * Configurável via `_generate_concentric_offsets(max_radius, step)` em `config.py`.
 
 * **`MAX_CONCURRENT_TASKS`**: Define quantos painéis serão processados simultaneamente no `batch_main.py` (padrão: 2). Ajuste conforme a RAM disponível.
-* **`ROI_CROP`**: Define áreas da tela para ignorar no cálculo de duplicidade (ex: ignorar rodapé que contém relógio ou número de página, focando só nos gráficos).
+* **`ROI_CROP`**: Define áreas da tela para ignorar no cálculo de duplicidade (ex: ignorar rodapé, focando só nos gráficos).
 
 ## 🛠️ Solução de Problemas
 
 **O robô clica, mas a página não muda?**
-O sistema usa círculos concêntricos para encontrar o alvo. Se ainda falhar, verifique os logs para ver se a estabilização visual está detectando mudanças. Adicione mais offsets no `CLICK_ATTEMPT_OFFSETS` em `config.py` se necessário.
+O sistema usa círculos concêntricos para encontrar o alvo. Se ainda falhar, se a estabilização visual está detectando mudanças. Adicione mais offsets no `CLICK_ATTEMPT_OFFSETS` em `config.py` se necessário.
 
 **Visuais carregando pela metade (mapas, gráficos)?**
 A estabilização visual deveria resolver isso automaticamente. Se persistir, aumente o `max_wait_seconds` em `_wait_for_visual_stability()` no `bot_core.py`.
@@ -272,7 +278,78 @@ A estabilização visual deveria resolver isso automaticamente. Se persistir, au
 O sistema seleciona o elemento de maior área com scroll que ocupe ≥60% do viewport. Se ainda selecionar errado, ajuste `min_area_ratio` em `_find_scroll_container()` no `bot_core.py`.
 
 **Erros de "White Screen"?**
-O sistema possui detecção automática de tela branca (erros de renderização do Power BI). Se a imagem for >99% branca, ela é ignorada e logada como erro, sem quebrar o fluxo. Isso evita falsos positivos em dashboards minimalistas legítimos.
+O sistema possui detecção automática de tela branca (erros de renderização). Se a imagem for >99% branca, ela é ignorada e logada como erro, sem quebrar o fluxo. Isso evita falsos positivos em dashboards minimalistas legítimos.
+
+## Recomendações para Uso em Produção 
+
+Este repositório **salva screenshots e metadados por execução**. Em ambientes reais isso pode capturar informação sensível (PII, dados financeiros, segredos comerciais).
+
+**Importante:** os controles abaixo são **recomendações de governança** para uso produtivo. **Eles não estão implementados neste estudo** por padrão.
+
+### 1) Classificação de sensibilidade (recomendado)
+Antes de executar, defina a classificação da evidência gerada por URL:
+
+- `public`: dashboards públicos ou showcase
+- `internal`: dados internos não sensíveis
+- `restricted`: pode conter PII/financeiro/sigilo
+- `secret`: dados críticos (recomendação: **proibir captura**)
+
+### 2) Retenção e expurgo (recomendado)
+Para reduzir risco e superfície de exposição defina uma política de retenção por classificação e automatize expurgo:
+
+- Por exemplo:
+  - `public/internal`: 30 dias
+  - `restricted`: 7 dias
+  - `secret`: **0 dias** (não capturar)
+
+### 3) Acesso e armazenamento (recomendado)
+Não trate `runs/` como repositório permanente.
+
+- Armazenar evidências em local com **controle de acesso** e **trilha de auditoria**
+- Evitar armazenamento em máquinas pessoais
+- Se persistir em storage, preferir solução corporativa com logs de acesso
+
+Objetivo: impedir compartilhamento acidental e falta de rastreabilidade.
+
+### 4) Outros possíveis controles técnicos (não implementados aqui)
+Em cenários produtivos, é comum exigir mecanismos de enforcement no runtime:
+
+- **Allowlist de domínios/URLs**: bloquear execução fora de destinos aprovados
+- **Modo "metadata-only"**: gerar catálogo sem salvar imagens
+- **Redação/máscara de áreas**: esconder regiões com PII (tabelas, emails, IDs)
+- **Bloqueio por classificação**: impedir captura quando a política proíbe (ex.: `secret`)
+
+---
+
+## 📊 KPIs Sugeridos
+
+1) **Cobertura de Catálogo**
+   - Definição: % de dashboards com catálogo válido gerado
+   - Fórmula: `dashboards_catalogados / dashboards_alvo`
+   - Objetivo: aumentar cobertura sem aumentar esforço manual
+
+2) **Tempo de Catalogação (por dashboard)**
+   - Definição: tempo total por URL (fim a fim)
+   - Fórmula: `t_fim - t_inicio`
+   - Uso: comparar modo sequencial vs batch, e medir ganho de automação
+
+3) **Custo Evitado de Documentação Manual**
+   - Definição: horas economizadas em relação ao processo manual
+   - Fórmula: `(tempo_manual_medio - tempo_automatico_medio) * volume`
+   - Conversão financeira: `horas_economizadas * custo_hora`
+   - Observação: não exige "revenue"; é custo direto evitado
+
+4) **Taxa de Reprocessamento / Falhas**
+   - Definição: % de URLs que exigem reprocessamento por erro (white screen, login, navegação quebrada)
+   - Fórmula: `reprocessamentos / execuções`
+   - Objetivo: reduzir instabilidade e custo operacional
+
+### Valor de Negócio
+- Reduz tempo para encontrar o painel certo (data discovery)
+- Reduz retrabalho de documentação e evidência
+- Reduz risco de governança (catálogo desatualizado)
+
+---
 
 ## 📝 Licença
 

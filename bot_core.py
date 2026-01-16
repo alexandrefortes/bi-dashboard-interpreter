@@ -353,10 +353,10 @@ class BrowserDriver:
         try:
             # Lista de seletores ordenados por precisão baseada no seu HTML
             selectors = [
-                "button[aria-label='Próxima Página']",   # 1º - Exato do HTML fornecido
-                "button[aria-label='Next Page']",        # 2º - Fallback EN
-                "button i.pbi-glyph-chevronrightmedium", # 3º - Ícone específico
-                ".pbi-glyph-chevronrightmedium",         # 4º - Ícone genérico
+                "button[aria-label='Próxima Página']",
+                "button[aria-label='Next Page']",
+                "button i.pbi-glyph-chevronrightmedium",
+                ".pbi-glyph-chevronrightmedium",
             ]
             
             for selector in selectors:
