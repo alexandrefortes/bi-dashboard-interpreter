@@ -1,5 +1,6 @@
-import asyncio
+import hashlib
 import json
+import shutil
 from pathlib import Path
 from datetime import datetime
 
@@ -42,151 +43,222 @@ class DashboardCataloger:
         except Exception as e:
             logger.error(f"Erro ao salvar processed_urls.json: {e}")
 
+
     async def process_dashboard(self, url):
-        # 0. Verifica Deduplicação
+        # 0. Verifica Deduplicação (Histórico de Sucesso)
         processed = self._load_processed_urls()
         if url in processed:
             last_run = processed[url]
             logger.warning(f"⏭️ URL já processada em {last_run.get('processed_at')} (Run: {last_run.get('run_id')}). Pulando.")
             return None
 
-        run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
-        run_dir = Path(OUTPUT_DIR) / run_id
-        img_dir = run_dir / "screenshots"
+        # 1. Definição do Diretório de Trabalho (WIP - Work In Progress)
+        # Usamos um hash da URL para criar uma pasta de trabalho persistente entre execuções
+        url_hash = hashlib.md5(url.encode('utf-8')).hexdigest()
+        wip_dir = Path(OUTPUT_DIR) / f"wip_{url_hash}"
+        wip_dir.mkdir(parents=True, exist_ok=True)
+        
+        img_dir = wip_dir / "screenshots"
         img_dir.mkdir(parents=True, exist_ok=True)
 
-        catalog_data = {
-            "run_id": run_id,
-            "url": url,
-            "timestamp": datetime.now().isoformat(),
-            "pages": []
-        }
+        # Arquivos de Checkpoint
+        scout_checkpoint = wip_dir / "scout_checkpoint.json"
+        explore_checkpoint = wip_dir / "exploration_checkpoint.json"
 
-
+        # Variáveis de Estado
+        initial_bytes = None
+        initial_pil = None
+        nav_data = None
+        pages_to_analyze = []
+        
         try:
-            # 1. Start & Navigate
-            await self.driver.start(headless=False)
-            success = await self.driver.navigate_and_stabilize(url)
-            if not success:
-                logger.error("Falha ao carregar dashboard.")
-                return None
-
-            # 2. Captura Inicial (com suporte a scroll para páginas longas)
-            initial_bytes = await self.driver.get_full_page_screenshot_bytes()
-            initial_pil = bytes_to_image(initial_bytes)
-            
-            if is_error_screen(initial_pil):
-                logger.error("Tela de erro detectada. Abortando.")
-                return None
-
-            # Salva inicial
-            (img_dir / "00_home.png").write_bytes(initial_bytes)
-            
-            # 3. Scout (Gemini identifica navegação)
-            logger.info("Executando Scout (Gemini)...")
-            nav_data = self.llm.discover_navigation(initial_bytes)
-            
-            # --- SALVA AUDITORIA SCOUT ---
-            if "raw_response" in nav_data:
-                audit_path = run_dir / "scout_audit_raw.txt"
+            # --- FASE 1: SCOUT (Batedor) ---
+            # Verifica se já temos o resultado do Scout
+            if scout_checkpoint.exists():
+                logger.info("💾 Checkpoint do Scout encontrado. Carregando...")
                 try:
-                    audit_path.write_text(nav_data["raw_response"] or "", encoding="utf-8")
-                    # Remove do dicionário principal para não sujar o catalog.json
-                    del nav_data["raw_response"]
+                    nav_data = json.loads(scout_checkpoint.read_text(encoding='utf-8'))
+                    run_id = nav_data.get("_meta_run_id", datetime.now().strftime("%Y%m%d_%H%M%S"))
+                    
+                    # Tenta carregar imagem inicial se existir
+                    if (img_dir / "00_home.png").exists():
+                        initial_bytes = (img_dir / "00_home.png").read_bytes()
+                        initial_pil = bytes_to_image(initial_bytes)
                 except Exception as e:
-                    logger.warning(f"Falha ao salvar auditoria Scout: {e}")
-            # -----------------------------
+                    logger.warning(f"Erro ao ler checkpoint do Scout: {e}. Reiniciando fase.")
             
-            # --- LÓGICA PARA EXPANDIR CLIQUES (Navegação Nativa) ---
-            if nav_data.get("nav_type") == "native_footer" and nav_data.get("page_count_visual"):
-                texto_paginas = nav_data["page_count_visual"]
-                total_paginas = parse_page_count(texto_paginas)
+            # Se não recuperou nav_data, roda o fluxo normal
+            if not nav_data:
+                logger.info("Iniciando navegação (Browser)...")
+                await self.driver.start(headless=False)
+                success = await self.driver.navigate_and_stabilize(url)
+                if not success:
+                    logger.error("Falha ao carregar dashboard.")
+                    return None
+
+                initial_bytes = await self.driver.get_full_page_screenshot_bytes()
+                initial_pil = bytes_to_image(initial_bytes)
                 
-                if total_paginas and total_paginas > 1 and nav_data.get("targets"):
-                    paginas_restantes = total_paginas - 1
-                    seta_next = nav_data["targets"][0]  # Assume que o único alvo é a seta
+                if is_error_screen(initial_pil):
+                    logger.error("Tela de erro detectada. Abortando.")
+                    return None
                     
-                    novos_targets = []
-                    for p in range(paginas_restantes):
-                        alvo_clone = seta_next.copy()
-                        alvo_clone['label'] = f"Ir para Pág {p+2}"
-                        novos_targets.append(alvo_clone)
+                (img_dir / "00_home.png").write_bytes(initial_bytes)
+                
+                logger.info("Executando Scout (Gemini)...")
+                nav_data = self.llm.discover_navigation(initial_bytes)
+                
+                # Salva Checkpoint Scout
+                nav_data["_meta_run_id"] = datetime.now().strftime("%Y%m%d_%H%M%S") # Guarda ID original
+                scout_checkpoint.write_text(json.dumps(nav_data, indent=2), encoding='utf-8')
+                
+                # Salva Auditoria Raw (mantendo compatibilidade)
+                if "raw_response" in nav_data:
+                    (wip_dir / "scout_audit_raw.txt").write_text(nav_data["raw_response"] or "", encoding="utf-8")
+                    del nav_data["raw_response"]
+
+
+            # --- FASE 2: EXPLORER (Explorador) ---
+            if explore_checkpoint.exists():
+                logger.info("💾 Checkpoint de Exploração encontrado. Carregando páginas...")
+                try:
+                    pages_to_analyze = json.loads(explore_checkpoint.read_text(encoding='utf-8'))
+                    # Precisamos garantir que os bytes das imagens estejam em memória para o Analyst
+                    # O JSON tem 'filename', vamos reler do disco
+                    valid_pages = []
+                    for page in pages_to_analyze:
+                        p_file = img_dir / page.get("filename", "")
+                        if p_file.exists():
+                            page['bytes'] = p_file.read_bytes() # Recarrega bytes
+                            valid_pages.append(page)
+                        else:
+                            logger.warning(f"Imagem {page.get('filename')} não encontrada. Ignorando página.")
+                    pages_to_analyze = valid_pages
                     
-                    nav_data["targets"] = novos_targets
-                    logger.info(f"Expandindo navegação nativa para {len(novos_targets)} cliques.")
-            # -----------------------------------------
+                except Exception as e:
+                    logger.warning(f"Erro ao ler checkpoint de Exploração: {e}. Reiniciando fase.")
+                    pages_to_analyze = []
 
-            logger.info(f"Navegação detectada: {nav_data.get('nav_type')} | Alvos: {len(nav_data.get('targets', []))}")
-            
-            catalog_data["navigation_structure"] = nav_data
-            
-            # Prepara lista de ações (inclui a Home como primeira "ação" implícita)
-            targets = nav_data.get("targets", [])
-            
-            # Adiciona a Home aos hashes vistos
-            nav_type = nav_data.get("nav_type", "default")
-            home_hash = compute_phash(initial_pil, nav_type)
-            
-            # 4. Explorer (Delega para classe especializada)
-            explorer = DashboardExplorer(self.driver, run_dir)
-            
-            # Executa exploração
-            new_pages = await explorer.explore(targets, nav_type, home_hash)
-            
-            # Monta lista final para análise (Home + Novas Páginas)
-            pages_to_analyze = [{
-                "id": 0,
-                "label": "Home",
-                "bytes": initial_bytes,
-                "hash": home_hash,
-                "filename": "00_home.png"
-            }] + new_pages
+            # Se não recuperou páginas, roda o Explorer
+            if not pages_to_analyze:
+                # Garante driver aberto se não veio do fluxo anterior (ex: crashou após Scout)
+                if not self.driver.page: 
+                     await self.driver.start(headless=False)
+                     # Precisamos re-navegar se o driver reiniciou? 
+                     # Se já passamos do Scout, teoricamente sim, mas o Explorer precisa estar na página?
+                     # O Explorer clica. Então SIM, precisa estar na página inicial.
+                     # Mas se já temos nav_data, podemos tentar ir direto? 
+                     # Melhor garantir estabilidade:
+                     await self.driver.navigate_and_stabilize(url) 
 
-            # 5. Analyst (Analisa todas as páginas válidas coletadas)
+                targets = nav_data.get("targets", [])
+                
+                # Prepara Home
+                nav_type = nav_data.get("nav_type", "default")
+                home_hash = compute_phash(initial_pil, nav_type) if initial_pil else "init"
+                
+                explorer = DashboardExplorer(self.driver, wip_dir)
+                new_pages = await explorer.explore(targets, nav_type, home_hash)
+                
+                # Monta lista
+                # Nota: Recarrega home bytes se necessário (caso tenha vindo de checkpoint scout)
+                if not initial_bytes and (img_dir / "00_home.png").exists():
+                     initial_bytes = (img_dir / "00_home.png").read_bytes()
+
+                pages_to_analyze = [{
+                    "id": 0,
+                    "label": "Home",
+                    "bytes": initial_bytes,
+                    "filename": "00_home.png"
+                }] + new_pages
+                
+                # Salva Checkpoint Explorer
+                # Remove bytes antes de salvar JSON
+                pages_serializable = []
+                for p in pages_to_analyze:
+                    p_copy = p.copy()
+                    if 'bytes' in p_copy: del p_copy['bytes'] # Não serializa bytes
+                    pages_serializable.append(p_copy)
+                
+                explore_checkpoint.write_text(json.dumps(pages_serializable, indent=2), encoding='utf-8')
+
+            
+            # --- FASE 3: ANALYST (Analista) ---
+            # Pode rodar sem browser se tivermos as imagens carregadas
+            if self.driver.page: 
+                await self.driver.close() # Libera recurso antes da análise pesada
+            
             logger.info(f"Iniciando análise detalhada de {len(pages_to_analyze)} páginas...")
             
+            catalog_pages = []
             for page in pages_to_analyze:
                 logger.info(f"Analisando: {page['label']}")
-                analysis = self.llm.analyze_page(page['bytes'])
                 
-                page_record = {
-                    "id": page['id'],
-                    "label": page['label'],
-                    "filename": page.get('filename', '00_home.png'),
-                    "analysis": analysis
-                }
-                catalog_data["pages"].append(page_record)
+                # Se faltar bytes (recuperação falhou?), tenta ler
+                if 'bytes' not in page or not page['bytes']:
+                     p_file = img_dir / page.get("filename", "")
+                     if p_file.exists():
+                         page['bytes'] = p_file.read_bytes()
+                
+                if 'bytes' in page and page['bytes']:
+                    analysis = self.llm.analyze_page(page['bytes'])
+                    page_record = {
+                        "id": page['id'],
+                        "label": page['label'],
+                        "filename": page.get('filename', '00_home.png'),
+                        "analysis": analysis
+                    }
+                    catalog_pages.append(page_record)
+                else:
+                    logger.error(f"Sem imagem para analisar página {page['label']}")
 
-            # 6. Output Final - Com título no nome da pasta e arquivo
+
+            # --- FINALIZAÇÃO E ARQUIVAMENTO ---
+            # Gera nome final
+            run_id = datetime.now().strftime("%Y%m%d_%H%M%S") # ID da finalização
+            
             titulo_painel = ""
-            if catalog_data["pages"]:
-                titulo_painel = catalog_data["pages"][0].get("analysis", {}).get("titulo_painel", "")
+            if catalog_pages:
+                titulo_painel = catalog_pages[0].get("analysis", {}).get("titulo_painel", "")
             
             titulo_safe = sanitize_filename(titulo_painel)
+            final_folder_name = f"{run_id}_{titulo_safe}" if titulo_safe else run_id
+            final_run_dir = Path(OUTPUT_DIR) / final_folder_name
             
-            # Renomeia a pasta para incluir o título
-            if titulo_safe:
-                new_run_dir = Path(OUTPUT_DIR) / f"{run_id}_{titulo_safe}"
-                try:
-                    run_dir.rename(new_run_dir)
-                    run_dir = new_run_dir
-                    logger.info(f"Pasta renomeada para: {run_dir.name}")
-                except Exception as e:
-                    logger.warning(f"Não foi possível renomear pasta: {e}")
-            
-            # Nome do catalog.json com título
-            catalog_filename = f"catalog_{titulo_safe}.json" if titulo_safe else "catalog.json"
-            json_path = run_dir / catalog_filename
-            
-            with open(json_path, "w", encoding="utf-8") as f:
-                json.dump(catalog_data, f, indent=2, ensure_ascii=False)
-            
-            logger.info(f"Processo finalizado. Catálogo salvo em: {json_path}")
-            
-            # 7. Marca como processado com sucesso
-            self._mark_as_processed(url, run_id, json_path)
-            
-            return catalog_data
+            catalog_data = {
+                "run_id": run_id,
+                "url": url,
+                "timestamp": datetime.now().isoformat(),
+                "navigation_structure": nav_data,
+                "pages": catalog_pages
+            }
 
+            # Renomeia pasta WIP para Final
+            try:
+                # Primeiro salva o catálago dentro da WIP
+                catalog_filename = f"catalog_{titulo_safe}.json" if titulo_safe else "catalog.json"
+                json_path = wip_dir / catalog_filename
+                with open(json_path, "w", encoding="utf-8") as f:
+                    json.dump(catalog_data, f, indent=2, ensure_ascii=False)
+                
+                # Checkpoints não são mais necessários na pasta final? 
+                # Pode apagar ou deixar. Vamos deixar como log.
+                
+                wip_dir.rename(final_run_dir)
+                logger.info(f"Pasta finalizada e renomeada para: {final_run_dir.name}")
+                
+                 # Caminho atualizado do json
+                final_json_path = final_run_dir / catalog_filename
+                self._mark_as_processed(url, run_id, final_json_path)
+                
+                return catalog_data
+
+            except Exception as e:
+                logger.error(f"Erro na finalização/renomeação: {e}")
+                return catalog_data # Retorna o que tem
+
+        except Exception as e:
+            logger.error(f"Erro crítico no processamento: {e}")
+            raise # Propaga para ver o erro no console
         finally:
             await self.driver.close()

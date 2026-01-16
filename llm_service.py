@@ -1,5 +1,6 @@
 import json
 import logging
+from typing import List, Dict, Any, Optional
 from google import genai
 from google.genai import types
 from config import GEMINI_API_KEY, MODEL_SCOUT, MODEL_ANALYST, VIEWPORT
@@ -14,7 +15,13 @@ class GeminiService:
         
         self.client = genai.Client(api_key=GEMINI_API_KEY)
 
-    def _call_gemini(self, model_name, prompt_text, image_bytes, response_schema=None):
+    def _call_gemini(
+        self, 
+        model_name: str, 
+        prompt_text: str, 
+        image_bytes: bytes, 
+        response_schema: Optional[Dict[str, Any]] = None
+    ) -> Optional[str]:
         """Método genérico para chamar a API nova do Google GenAI."""
         try:
             image_part = types.Part.from_bytes(
@@ -49,7 +56,7 @@ class GeminiService:
             logger.error(f"Erro na chamada LLM ({model_name}): {e}")
             return None
 
-    def discover_navigation(self, image_bytes):
+    def discover_navigation(self, image_bytes: bytes) -> Dict[str, Any]:
         """Estágio B: Identifica elementos de navegação com prioridade para paginação nativa."""
         prompt = """
         Analise esta captura de tela de um relatório Power BI.
@@ -145,7 +152,7 @@ class GeminiService:
             logger.error(f"Falha ao decodificar JSON do Scout. Recebido: {json_text}")
             return base_result
 
-    def analyze_page(self, image_bytes):
+    def analyze_page(self, image_bytes: bytes) -> Dict[str, Any]:
         """Estágio D: Documentação Funcional (Abstrata e Atemporal)."""
         prompt = """
         Atue como um Arquiteto de BI responsável por catalogar ativos de dados da empresa.

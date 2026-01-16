@@ -1,5 +1,6 @@
 import asyncio
 import io
+from typing import Optional, List, Tuple, Dict, Any
 from playwright.async_api import async_playwright
 from PIL import Image
 from config import VIEWPORT
@@ -19,7 +20,7 @@ class BrowserDriver:
         self.context = None
         self.page = None
 
-    async def start(self, headless=True):
+    async def start(self, headless: bool = True) -> None:
         """Inicia o Playwright."""
         self.playwright = await async_playwright().start()
         logger.info(f"Iniciando navegador (Headless: {headless})...")
@@ -29,7 +30,7 @@ class BrowserDriver:
         self.context = await self.browser.new_context(viewport=VIEWPORT)
         self.page = await self.context.new_page()
 
-    async def navigate_and_stabilize(self, url):
+    async def navigate_and_stabilize(self, url: str) -> bool:
         """
         Navega para URL. Se cair em tela de login, espera o humano logar.
         """
@@ -78,7 +79,7 @@ class BrowserDriver:
         max_wait_seconds: float = 30.0, 
         check_interval: float = 1.0,
         stability_threshold: int = 5
-    ):
+    ) -> None:
         """
         Aguarda até que a página pare de mudar visualmente.
         
@@ -125,7 +126,7 @@ class BrowserDriver:
         
         logger.warning(f"⚠️ Timeout de estabilidade visual ({max_wait_seconds}s) - prosseguindo mesmo assim")
 
-    async def click_at_percentage(self, x_pct, y_pct):
+    async def click_at_percentage(self, x_pct: float, y_pct: float) -> bool:
         """Clica na tela baseada em porcentagem da viewport."""
         width = VIEWPORT['width']
         height = VIEWPORT['height']
@@ -142,11 +143,11 @@ class BrowserDriver:
             logger.error(f"Erro ao clicar: {e}")
             return False
 
-    async def get_screenshot_bytes(self):
+    async def get_screenshot_bytes(self) -> bytes:
         """Retorna bytes da screenshot PNG (viewport atual)."""
         return await self.page.screenshot(type="png")
 
-    async def get_full_page_screenshot_bytes(self):
+    async def get_full_page_screenshot_bytes(self) -> bytes:
         """
         Retorna bytes da screenshot PNG da página completa.
         
@@ -186,7 +187,7 @@ class BrowserDriver:
         final_image.save(output_buffer, format="PNG")
         return output_buffer.getvalue()
 
-    async def _find_scroll_container(self, min_area_ratio: float = 0.6):
+    async def _find_scroll_container(self, min_area_ratio: float = 0.6) -> Optional[Dict[str, Any]]:
         """
         Encontra o container principal com scroll vertical.
         
@@ -237,7 +238,7 @@ class BrowserDriver:
             return best;
         }""", min_area_ratio)
 
-    async def _capture_with_scroll(self, selector, scroll_height, client_height):
+    async def _capture_with_scroll(self, selector: str, scroll_height: int, client_height: int) -> Tuple[List[bytes], List[int]]:
         """Captura screenshots enquanto faz scroll."""
         step = client_height - SCROLL_OVERLAP_PX
         
@@ -306,7 +307,7 @@ class BrowserDriver:
         
         return screenshots, positions
 
-    def _stitch_screenshots(self, screenshots, positions, client_height, scroll_height):
+    def _stitch_screenshots(self, screenshots: List[bytes], positions: List[int], client_height: int, scroll_height: int) -> Image.Image:
         """Une múltiplas screenshots baseado nas posições de scroll."""
         images = [Image.open(io.BytesIO(b)) for b in screenshots]
         
@@ -328,13 +329,13 @@ class BrowserDriver:
         
         return final_image
 
-    async def close(self):
+    async def close(self) -> None:
         """Fecha o navegador e libera recursos."""
         if self.context: await self.context.close()
         if self.browser: await self.browser.close()
         if self.playwright: await self.playwright.stop()
     
-    async def try_click_native_next_button(self):
+    async def try_click_native_next_button(self) -> bool:
         """
         Tenta clicar no botão nativo de próxima página via DOM selector.
         Otimizado com base no HTML real extraído.

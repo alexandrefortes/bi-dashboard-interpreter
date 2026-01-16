@@ -2,13 +2,13 @@ import io
 import re
 import logging
 import imagehash
-from typing import Optional
+from typing import Optional, List, Union, Tuple
 from PIL import Image
 from datetime import datetime
 from config import ROI_CROP
 
 
-def setup_logger(name="Cataloger"):
+def setup_logger(name: str = "Cataloger") -> logging.Logger:
     """Configura um logger simples com output no console."""
     logger = logging.getLogger(name)
     logger.setLevel(logging.INFO)
@@ -22,7 +22,7 @@ def setup_logger(name="Cataloger"):
     return logger
 
 
-def parse_page_count(text: str):
+def parse_page_count(text: str) -> Optional[int]:
     # type: (str) -> Optional[int]
     """
     Extrai o total de páginas de textos de navegação.
@@ -52,11 +52,11 @@ def parse_page_count(text: str):
     
     return None
 
-def bytes_to_image(img_bytes):
+def bytes_to_image(img_bytes: bytes) -> Image.Image:
     """Converte bytes para objeto PIL Image."""
     return Image.open(io.BytesIO(img_bytes)).convert('RGB')
 
-def crop_roi_image(pil_image, nav_type="default"):
+def crop_roi_image(pil_image: Image.Image, nav_type: str = "default") -> Image.Image:
     """Realiza o crop na imagem baseado no tipo de navegação."""
     crop_coords = ROI_CROP.get(nav_type, ROI_CROP["default"])
     w, h = pil_image.size
@@ -68,7 +68,7 @@ def crop_roi_image(pil_image, nav_type="default"):
     
     return pil_image.crop((left, top, right, bottom))
 
-def compute_phash(pil_image, nav_type="default"):
+def compute_phash(pil_image: Image.Image, nav_type: str = "default") -> imagehash.ImageHash:
     """Calcula o hash perceptual da imagem (focando na ROI)."""
     roi = crop_roi_image(pil_image, nav_type)
     return imagehash.phash(roi)
@@ -99,7 +99,7 @@ def sanitize_filename(title: str, max_length: int = 50) -> str:
     return safe.lower()
 
 
-def is_error_screen(pil_image):
+def is_error_screen(pil_image: Image.Image) -> bool:
     """
     Heurística ajustada: tolerar mais branco.
     """
@@ -113,6 +113,6 @@ def is_error_screen(pil_image):
     # Se >99% branco = provável erro (tela branca da morte)
     return (white > 9900)
 
-def clamp(value, min_val=0, max_val=1):
+def clamp(value: float, min_val: float = 0, max_val: float = 1) -> float:
     """Restringe um valor entre min_val e max_val."""
     return max(min_val, min(max_val, value))

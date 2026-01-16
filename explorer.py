@@ -1,5 +1,5 @@
 import asyncio
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from pathlib import Path
 
 from config import VIEWPORT, CLICK_ATTEMPT_OFFSETS
@@ -12,7 +12,7 @@ class DashboardExplorer:
     """
     Responsável pela fase de exploração: clicar em alvos e coletar novas páginas.
     """
-    def __init__(self, driver, output_dir: Path):
+    def __init__(self, driver: Any, output_dir: Path):
         self.driver = driver
         self.img_dir = output_dir / "screenshots"
         self.img_dir.mkdir(parents=True, exist_ok=True)

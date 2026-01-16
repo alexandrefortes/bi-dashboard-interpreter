@@ -106,6 +106,23 @@ O projeto opera com 3 "personas" de IA sequenciais:
 
 ---
 
+## 💾 Checkpoints e Resiliência
+
+O sistema possui um mecanismo robusto para evitar perda de dados e reprocessamento desnecessário, ideal para rodar em lote.
+
+### Como funciona
+Ao processar uma URL, é criada uma pasta de trabalho temporária (`runs/wip_<hash>`). Se o script for interrompido, ao rodar novamente ele detecta essa pasta e retoma de onde parou:
+
+1.  **Checkpoint do Scout (`scout_checkpoint.json`)**: Salvo após a identificação da navegação.
+    *   *Retomada:* Se existir, o robô pula a chamada do LLM e a navegação inicial.
+2.  **Checkpoint de Exploração (`exploration_checkpoint.json`)**: Salvo após clicar em todos os botões e coletar as imagens.
+    *   *Retomada:* Se existir, o robô **nem abre o navegador**. Ele carrega as imagens do disco e vai direto para a fase de Análise.
+
+### Finalização
+Somente após o sucesso de todas as etapas a pasta é renomeada de `wip_<hash>` para o formato final `DATA_Titulo`.
+
+---
+
 ## 📂 Estrutura de Saída
 
 Cada execução cria uma pasta única dentro de `runs/` com o timestamp da execução e o título do painel:
