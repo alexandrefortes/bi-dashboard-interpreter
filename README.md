@@ -16,7 +16,7 @@ Não foi desenvolvido a pedido de terceiros, nem como parte de um projeto contra
 > *Apesar de ser um projeto de *estudo*, ele resolve um problema real: a catalogação manual de painéis de BI é trabalhosa, desatualiza rapidamente e dificulta a descoberta de dados (data discovery). Este projeto automatiza esse processo.*
 
 
-## 🧱 Modularização
+## Modularização
 
 O código segue princípios de responsabilidade única:
 * **`main.py`**: Orquestrador de entrada (Execução sequencial).
@@ -174,6 +174,7 @@ Abaixo, um exemplo real de como o agente interpreta uma tela.
 **Entrada (Screenshot capturado automaticamente):**
 
 ![Exemplo de Dashboard - Media Analytics](hello-world/sample.png)
+*Origem: [Marketing Campaign Analysis Dashboard](https://community.fabric.microsoft.com/t5/Themes-Gallery/Marketing-Campaign-Analysis-Dashboard/td-p/4887536), por visually (Fabric Community Themes Gallery)*
 
 **Saída (JSON gerado pelo Agente):**
 
