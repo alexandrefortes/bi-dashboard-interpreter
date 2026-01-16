@@ -169,6 +169,30 @@ class DashboardCataloger:
 
                 targets = nav_data.get("targets", [])
                 
+                # LÓGICA DE EXPANSÃO DE ALVOS (NATIVE FOOTER)
+                # Se for navegação de rodapé e tiver contador (ex: "1 de 4"),
+                # precisamos criar alvos adicionais para clicar N vezes.
+                nav_type = nav_data.get("nav_type", "default")
+                page_count_str = nav_data.get("page_count_visual")
+                
+                if nav_type == "native_footer" and page_count_str and targets:
+                    total_pages = parse_page_count(page_count_str)
+                    if total_pages and total_pages > 1:
+                        logger.info(f"📄 Rodapé nativo detectado: {total_pages} páginas. Expandindo alvos...")
+                        # O Scout retorna 1 alvo (botão Next). Precisamos clicar (Total - 1) vezes.
+                        # Ex: 4 páginas -> estamos na 1, faltam 3 cliques.
+                        clicks_needed = total_pages - 1
+                        
+                        base_target = targets[0] # Assume que o Scout só manda o botão Next
+                        expanded_targets = []
+                        for i in range(clicks_needed):
+                            t = base_target.copy()
+                            t["label"] = f"Next Page ({i+1}/{clicks_needed})"
+                            expanded_targets.append(t)
+                        
+                        targets = expanded_targets
+                        logger.info(f"🎯 Alvos expandidos para {len(targets)} cliques sequenciais.")
+                
                 # Prepara Home
                 nav_type = nav_data.get("nav_type", "default")
                 home_hash = compute_phash(initial_pil, nav_type) if initial_pil else "init"

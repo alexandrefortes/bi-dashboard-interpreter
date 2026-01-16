@@ -8,15 +8,29 @@ from datetime import datetime
 from config import ROI_CROP
 
 
+import contextvars
+
+# ContextVar para armazenar o ID do worker atual (thread-safe e async-safe)
+current_worker_id = contextvars.ContextVar('worker_id', default='')
+
+class ContextFilter(logging.Filter):
+    """Injeta o ID do worker no registro de log."""
+    def filter(self, record):
+        w_id = current_worker_id.get()
+        record.worker_id = f" [{w_id}]" if w_id else ""
+        return True
+
 def setup_logger(name: str = "Cataloger") -> logging.Logger:
-    """Configura um logger simples com output no console."""
+    """Configura logger com suporte a contexto (Worker ID)."""
     logger = logging.getLogger(name)
     logger.setLevel(logging.INFO)
     
     if not logger.handlers:
         ch = logging.StreamHandler()
-        formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s', datefmt='%H:%M:%S')
+        # Formato inclui %(worker_id)s
+        formatter = logging.Formatter('[%(asctime)s]%(worker_id)s %(levelname)s: %(message)s', datefmt='%H:%M:%S')
         ch.setFormatter(formatter)
+        ch.addFilter(ContextFilter())
         logger.addHandler(ch)
         
     return logger

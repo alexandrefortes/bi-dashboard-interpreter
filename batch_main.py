@@ -5,18 +5,22 @@ from pathlib import Path
 from playwright.async_api import async_playwright
 
 from cataloger import DashboardCataloger
-from utils import setup_logger
+from utils import setup_logger, current_worker_id
+
+from config import MAX_CONCURRENT_TASKS
 
 logger = setup_logger("BatchManager")
 
 # Configurações do Batch
-MAX_CONCURRENT_TASKS = 3  # Ajuste conforme memória disponível (3 = ~3GB RAM)
 URLS_FILE = "urls.json"
 
-async def process_single_url(url: str, semaphore: asyncio.Semaphore, browser_instance, file_lock: asyncio.Lock):
+async def process_single_url(url: str, semaphore: asyncio.Semaphore, browser_instance, file_lock: asyncio.Lock, worker_idx: int):
     """
     Worker que processa uma única URL respeitando o semáforo.
     """
+    # Define contexto para logs deste worker
+    token = current_worker_id.set(f"Worker-{worker_idx}")
+    
     async with semaphore:
         logger.info(f"🚦 [START] Iniciando worker para: {url}")
         try:
@@ -25,6 +29,9 @@ async def process_single_url(url: str, semaphore: asyncio.Semaphore, browser_ins
             logger.info(f"🏁 [DONE] Finalizado com sucesso: {url}")
         except Exception as e:
             logger.error(f"❌ [ERROR] Falha no worker ({url}): {e}")
+            
+    # Opcional em async, mas boa prática limpar
+    current_worker_id.reset(token)
 
 async def main():
     # 1. Carrega URLs
@@ -76,9 +83,9 @@ async def main():
         try:
             # 4. Cria e agenda tarefas
             tasks = []
-            for url in urls:
+            for i, url in enumerate(urls):
                 task = asyncio.create_task(
-                    process_single_url(url, semaphore, browser, file_lock)
+                    process_single_url(url, semaphore, browser, file_lock, i+1)
                 )
                 tasks.append(task)
             
@@ -93,9 +100,11 @@ async def main():
     logger.info("✨ Processamento em Lote Finalizado! ✨")
 
 if __name__ == "__main__":
-    # Windows Selector Event Loop Policy fix
-    import sys
-    if sys.platform == 'win32':
-        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    # Windows Selector Event Loop Policy fix - REMOVIDO
+    # Playwright requer ProactorEventLoop no Windows (padrão do Python),
+    # SelectorEventLoop não suporta subprocessos necessários para o browser.
+    # import sys
+    # if sys.platform == 'win32':
+    #     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
         
     asyncio.run(main())

@@ -255,7 +255,7 @@ class BrowserDriver:
         
         # Aguarda estabilização visual no topo
         await self._wait_for_visual_stability(
-            max_wait_seconds=5.0,
+            max_wait_seconds=10.0, # Aumentado para Batch Mode
             check_interval=0.5,
             stability_threshold=3
         )
@@ -274,7 +274,7 @@ class BrowserDriver:
             
             # Estabilização visual leve para cada posição de scroll
             await self._wait_for_visual_stability(
-                max_wait_seconds=5.0,  # Timeout curto para scroll
+                max_wait_seconds=8.0,  # Aumentado para Batch Mode
                 check_interval=0.5,
                 stability_threshold=3  # Mais sensível
             )

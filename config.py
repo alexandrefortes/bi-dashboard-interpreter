@@ -21,6 +21,9 @@ DUPLICATE_THRESHOLD = 4 # Diferença máxima para considerar página duplicada (
 # Configurações de Diretório
 OUTPUT_DIR = "runs"
 
+# Configurações de Batch
+MAX_CONCURRENT_TASKS = 2 # Ajuste conforme memória disponível
+
 # Configurações de Viewport (Seguindo seu playwright_bot.py)
 VIEWPORT = {'width': 1920, 'height': 1080}
 
