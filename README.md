@@ -32,6 +32,9 @@ O código segue princípios de responsabilidade única:
 
 * [Financial Performance Dashboard](https://community.fabric.microsoft.com/t5/Themes-Gallery/Financial-Performance-Dashboard/m-p/4901530), por Arbaz_Ahmad (Fabric Community Themes Gallery)
 * [Marketing Campaign Analysis Dashboard](https://community.fabric.microsoft.com/t5/Themes-Gallery/Marketing-Campaign-Analysis-Dashboard/td-p/4887536), por visually (Fabric Community Themes Gallery)
+* [The Sales & Profit Template](https://community.fabric.microsoft.com/t5/Themes-Gallery/The-Sales-amp-Profit-Template-that-shows-what-really-drives/td-p/4913311), por dataflip (Fabric Community Themes Gallery)
+* [Sales Performance Dashboard](https://community.fabric.microsoft.com/t5/Themes-Gallery/Sales-performance-dashboard/td-p/4910244), por visually (Fabric Community Themes Gallery)
+* [DataFlip Inventory Planning Dashboard](https://community.fabric.microsoft.com/t5/Themes-Gallery/DataFlip-Inventory-Planning-Dashboard/td-p/4889899), por dataflip (Fabric Community Themes Gallery)
 
 **Observação:** os dashboards acima são de terceiros e estão publicados como showcase.
 
@@ -255,6 +258,18 @@ Crie um assistente que ajuda usuários a encontrar o painel certo via chat natur
 *   **Matching:** Um modelo LLM compara a pergunta do usuário com o campo `perguntas_respondidas` do JSON gerado.
 *   **Resposta:** *"Recomendo o painel **Sales Overview**. Ele responde 'Qual a performance regional?'. Veja uma prévia:"*
 *   **Visual:** Exibe (se permitido) a imagem `00_home.png` para o usuário confirmar antes de clicar no link.
+
+**Exemplo de Resposta (gerada a partir dos metadados catalogados):**
+
+> **Pergunta do Usuário:** *"Estou precisando de dados sobre performance de marketing digital. Existe algum painel sobre isso?"*
+
+<img src="hello-world/sample_rag_response.png" width="500">
+
+### 3. Detecção de Painéis Redundantes
+Identifique dashboards duplicados ou sobrepostos automaticamente:
+*   **Como funciona:** Um LLM compara semanticamente os metadados gerados (`objetivo_macro`, `perguntas_respondidas`, `principais_indicadores`, `dominio_negocio`) entre todos os painéis catalogados.
+*   **Resultado:** Lista de pares de painéis com alta similaridade semântica, mesmo que tenham nomes diferentes.
+*   **Valor:** Reduz custo de manutenção, elimina confusão do usuário final e melhora a governança do ambiente analítico.
 
 ---
 
