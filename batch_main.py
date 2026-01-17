@@ -107,11 +107,9 @@ async def main():
         logger.error(f"Erro ao gerar relatorio final: {e}")
 
 if __name__ == "__main__":
-    # Windows Selector Event Loop Policy fix - REMOVIDO
-    # Playwright requer ProactorEventLoop no Windows (padrão do Python),
-    # SelectorEventLoop não suporta subprocessos necessários para o browser.
-    # import sys
-    # if sys.platform == 'win32':
-    #     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    # Fix para Windows: Playwright requer ProactorEventLoop (que suporta subprocessos)
+    import sys
+    if sys.platform == 'win32':
+        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
         
     asyncio.run(main())

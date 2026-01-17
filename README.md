@@ -43,10 +43,11 @@ O código segue princípios de responsabilidade única:
 
 1. **Instale as dependências:**
 ```bash
-pip install -r requirements.txt
+python install_deps.py
 ```
 
-> **✨ Ou, conte com a Instalação Automática**
+> **✨ Ou, conte com a Instalação Automática** 
+
 > Ao executar a primeira célula do notebook `bi-dashboard-interpreter.ipynb` pela primeira vez, o sistema detecta se as dependências já foram instaladas. Se não, ele instala tudo automaticamente (incluindo o Playwright) sem você precisar abrir o terminal.
 >
 > ![Instalação Automática de Dependências](hello-world/instalacao_dependencias.png)
@@ -69,6 +70,33 @@ Gere o arquivo de URLs (via notebook `bi-dashboard-interpreter.ipynb` ou manualm
 ```bash
 python main.py
 ```
+
+## 🎛️ Guia Visual da Interface
+
+O projeto conta com uma interface gráfica (GUI) rodando dentro do Jupyter Notebook para facilitar a configuração e operação diária.
+
+![Painel de Controle](hello-world/interface.png)
+
+### 1. Área de Input
+Cole as URLs dos dashboards que deseja processar. Pode ser uma ou várias (uma por linha).
+> **Dica:** O sistema salva automaticamente essa lista. Se você fechar e abrir de novo, suas URLs estarão lá.
+
+### 2. Configuração (Botões Superiores)
+*   **🟢 Catalogar URLs Acima:** Salva as URLs na fila de processamento. Use este botão no dia a dia para adicionar novos painéis sem apagar o que já foi feito.
+*   **🔵 Gerar/Abrir Relatório:** Compila o site estático com o catálogo atual e abre no seu navegador. Funciona mesmo se o processamento ainda estiver ocorrendo (mostra o que já está pronto).
+*   **🔴 Remover URLs (CUIDADO):** Remove o histórico (logs, prints, JSONs) **apenas das URLs listadas** na caixa de texto. Útil para reprocessar um painel específico do zero.
+*   **🔴 Reset de Fábrica (PERIGO):** Botão "Pânico". Apaga **absolutamente tudo** (todas as execuções, relatórios e backups). Use apenas para começar um projeto novo.
+
+### 3. Logs de Configuração
+Caixa de texto onde você recebe feedback das ações acima (ex: "Backup salvo em...", "Memória limpa", etc.).
+
+### 4. Execução (Botões Inferiores)
+Ao clicar, o sistema abre uma janela externa do **PowerShell** para rodar o robô.
+
+*   **🟧 Executar Batch (Lote):** O modo "Turbo". Processa múltiplos painéis ao mesmo tempo em abas diferentes. Recomendado para listas grandes. Tamanho do lote configurável em `config.py`.
+*   **⬜ Executar Sequencial:** O modo "Clássico". Processa um por um. Útil para debug ou se você tem pouca memória RAM disponível.
+
+---
 
 ## 🔐 Ambientes com login (MFA/SSO)
 
@@ -315,16 +343,16 @@ Você pode ajustar a sensibilidade do robô:
 
 ## 🛠️ Solução de Problemas
 
-**O robô clica, mas a página não muda?**
+**O robô clica, mas a página não muda?**  
 O sistema usa círculos concêntricos para encontrar o alvo. Se ainda falhar, se a estabilização visual está detectando mudanças. Adicione mais offsets no `CLICK_ATTEMPT_OFFSETS` em `config.py` se necessário.
 
-**Visuais carregando pela metade (mapas, gráficos)?**
+**Visuais carregando pela metade (mapas, gráficos)?**  
 A estabilização visual deveria resolver isso automaticamente. Se persistir, aumente o `max_wait_seconds` em `_wait_for_visual_stability()` no `bot_core.py`.
 
-**Scroll capturando widget interno (tabela) em vez da página?**
+**Scroll capturando widget interno (tabela) em vez da página?**  
 O sistema seleciona o elemento de maior área com scroll que ocupe ≥60% do viewport. Se ainda selecionar errado, ajuste `min_area_ratio` em `_find_scroll_container()` no `bot_core.py`.
 
-**Erros de "White Screen"?**
+**Erros de "White Screen"?**  
 O sistema possui detecção automática de tela branca (erros de renderização). Se a imagem for >99% branca, ela é ignorada e logada como erro, sem quebrar o fluxo. Isso evita falsos positivos em dashboards minimalistas legítimos.
 
 ## Recomendações para Uso em Produção 
@@ -398,7 +426,7 @@ Em cenários produtivos, é comum exigir mecanismos de enforcement no runtime:
 
 ---
 
-## 💰 Custo e Performance (Benchmark)
+## 💰 Custo e Performance (estimativa)
 
 Estimativas baseadas em testes reais com o modelo **Gemini 2.5 Pro** e execução em lote (2 workers).
 
@@ -408,7 +436,7 @@ Estimativas baseadas em testes reais com o modelo **Gemini 2.5 Pro** e execuçã
 *   **Custo (USD):** $0,027
 *   **Custo (BRL):** R$ 0,16 (dólar a R$ 6,00)
 
-### Projeto Completo (Cenário: 300 Painéis)
+### Projeto Grande (Ex.: cenário com 300 Painéis)
 *   **Custo Total de API:** ~R$ 48,00
 *   **Tempo Total (Batch):** ~6 horas (com 2 workers simultâneos)
 

@@ -4,11 +4,13 @@ import os
 from pathlib import Path
 import reporter
 
+from datetime import datetime
+
 # Configurações de Caminhos
 RUNS_DIR = Path("runs")
 REPORT_DIR = Path("bi_catalog_report")
 URLS_FILE = Path("urls.json")
-URLS_OLD_FILE = Path("urls_old.json")
+BACKUP_DIR = Path("urls_json_backups")
 PROCESSED_LOG = RUNS_DIR / "processed_urls.json"
 
 def load_urls():
@@ -24,11 +26,15 @@ def load_urls():
 
 def _backup_and_save_urls(target_urls):
     """Lógica interna: Faz backup do urls.json atual e salva o novo."""
-    # 1. Backup
+    # 1. Backup com Timestamp
     if URLS_FILE.exists():
         try:
-            shutil.copy2(URLS_FILE, URLS_OLD_FILE)
-            print(f"💾 Backup criado: {URLS_OLD_FILE.name}")
+            BACKUP_DIR.mkdir(exist_ok=True)
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            backup_file = BACKUP_DIR / f"urls_old_{timestamp}.json"
+            
+            shutil.copy2(URLS_FILE, backup_file)
+            print(f"💾 Backup salvo em: {backup_file}")
         except Exception as e:
             print(f"⚠️ Falha no backup: {e}")
             
@@ -38,18 +44,21 @@ def _backup_and_save_urls(target_urls):
     print(f"📝 Arquivo 'urls.json' atualizado com {len(target_urls)} URLs.")
 
 def get_old_urls_content():
-    """Lê o conteúdo do backup para exibição."""
-    if URLS_OLD_FILE.exists():
-        try:
-            with open(URLS_OLD_FILE, 'r', encoding='utf-8') as f:
-                return json.dump(json.load(f), indent=2) # retorna string formatada? Não, json.load retorna obj, quero texto
-                # Melhor: ler texto direto
-        except:
-            pass
+    """Lê o conteúdo do backup mais recente para exibição."""
+    if not BACKUP_DIR.exists():
+        return None
+        
+    try:
+        # Pega todos os backups
+        files = list(BACKUP_DIR.glob("urls_old_*.json"))
+        if not files:
+            return None
             
-    if URLS_OLD_FILE.exists():
-        return URLS_OLD_FILE.read_text(encoding='utf-8')
-    return None
+        # Pega o mais recente baseado na data de criação
+        latest_file = max(files, key=os.path.getctime)
+        return latest_file.read_text(encoding='utf-8')
+    except:
+        return None
 
 def smart_update(urls_list):
     """
@@ -115,7 +124,6 @@ def smart_update(urls_list):
     # 4. Salva urls.json (com Backup)
     _backup_and_save_urls(target_urls)
 
-    print(f"🚀 Tudo pronto! Execute: !python batch_main.py")
     return True
 
 def save_urls_simple(urls_list):
@@ -131,7 +139,6 @@ def save_urls_simple(urls_list):
         
     print(f"💾 Salvando {len(target_urls)} URLs para processamento (Sem Limpeza)...")
     _backup_and_save_urls(target_urls)
-    print(f"🚀 Tudo pronto! Execute: !python batch_main.py")
     return True
 
 def define_urls(urls_text, mode="smart"):
@@ -149,3 +156,48 @@ def define_urls(urls_text, mode="smart"):
     else:
         print("Modo inválido")
         return False
+
+def reset_all():
+    """
+    Reset de Fábrica: Apaga TUDO para começar do zero.
+    - Pasta de Logs (Runs)
+    - Pasta de Relatórios
+    - Arquivo de URLs
+    - Backups
+    """
+    print("☢️ Iniciando Protocolo de Reset Total...")
+
+    # 1. Runs
+    if RUNS_DIR.exists():
+        try:
+            shutil.rmtree(RUNS_DIR)
+            print("✅ Histórico de execuções (runs/) apagado.")
+        except Exception as e:
+            print(f"❌ Erro ao apagar runs: {e}")
+    
+    # 2. Relatórios
+    if REPORT_DIR.exists():
+        try:
+            shutil.rmtree(REPORT_DIR)
+            print("✅ Relatórios gerados (bi_catalog_report/) apagados.")
+        except Exception as e:
+            print(f"❌ Erro ao apagar relatórios: {e}")
+
+    # 3. URLs
+    if URLS_FILE.exists():
+        try:
+            os.remove(URLS_FILE)
+            print("✅ Arquivo de URLs (urls.json) removido.")
+        except Exception as e:
+            print(f"❌ Erro ao apagar urls.json: {e}")
+            
+    # 4. Backups
+    if BACKUP_DIR.exists():
+        try:
+            shutil.rmtree(BACKUP_DIR)
+            print("✅ Pasta de Backups (urls_json_backups/) removida.")
+        except Exception as e:
+            print(f"❌ Erro ao apagar backups: {e}")
+            
+    print("✨ Sistema limpo e pronto para nova configuração.")
+    return True
