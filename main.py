@@ -2,6 +2,7 @@ import asyncio
 import sys
 import json
 import os
+import reporter
 from cataloger import DashboardCataloger
 
 # Nome do arquivo temporário de troca de dados
@@ -70,6 +71,12 @@ async def main():
     # if os.path.exists(CONFIG_FILE): os.remove(CONFIG_FILE)
     
     print("\n🏁 Processamento finalizado!")
+    
+    # Gera relatório estático final
+    try:
+        reporter.generate_report()
+    except Exception as e:
+        print(f"Erro ao gerar relatorio final: {e}")
 
 if __name__ == "__main__":
     try:

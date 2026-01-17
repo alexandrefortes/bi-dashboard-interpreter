@@ -26,6 +26,7 @@ O código segue princípios de responsabilidade única:
 * **`click_strategy.py`**: Estratégias de clique com retries (Círculos Concêntricos, DOM Fallback).
 * **`llm_service.py`**: Integração com Google GenAI (Gemini).
 * **`bot_core.py`**: Camada de abstração do Playwright.
+* **`reporter.py`**: Gerador de relatório estático (HTML interativo e visual).
 * **`config.py`**: Centralização de constantes e ajustes finos.
 
 ## 🧪 Dashboards utilizados nos testes
@@ -102,6 +103,21 @@ O projeto opera com 3 "personas" de IA sequenciais:
 * **Lógica:** Analisa apenas as páginas únicas validadas.
 * **Saída:** Gera descrições funcionais (título, objetivo, filtros, público-alvo) ignorando dados voláteis (números do dia), focando na estrutura analítica (o que o painel diz).
 
+### 4. The Reporter (O Repórter)
+
+* **Função:** Consolidação e Apresentação.
+* **Lógica:** Compila todo o conhecimento gerado em um site estático (HTML/CSS) leve e interativo, sem dependências de servidor.
+* **Destaques:**
+    * **Titulação Inteligente:** Refina títulos genéricos (ex: "Overview") para nomes descritivos baseados no conteúdo (ex: "Análise de Vendas"), com formatação profissional (Sentence case).
+    * **Interatividade:** Busca dinâmica e cards com efeito *mouse-over* que revelam automaticamente o objetivo estratégico do painel, facilitando o *data discovery* rápido pelo usuário.
+
+<br>
+
+| **Visão Geral (Grid)** | **Detalhe (Drill-down)** |
+|:---:|:---:|
+| ![Catálogo - Tela Inicial](templates/template-screenshot.png) | ![Catálogo - Modal de Detalhes](templates/template-screenshot-click.png) |
+<br>
+
 ### Adendo sobre captura de tela:
 
 1. Acesso inicial ou clique para mudar de página
@@ -167,6 +183,11 @@ runs/
         ├── 01_target.png             # Página 2 (após clique)
         ├── 02_target.png             # Página 3 (após clique)
         └── ...
+
+bi_catalog_report/            # Relatório Final (Site)
+├── index.html                # Catálogo Interativo
+└── images/                   # Imagens otimizadas para web
+
 
 ```
 

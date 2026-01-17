@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BI Catalog Viewer</title>
+    <style>
+        :root {
+            --bg-dark: #0f1115;
+            --bg-card: #181b21;
+            --bg-hover: #22262e;
+            --accent-primary: #7c3aed;
+            /* Violet */
+            --accent-secondary: #2563eb;
+            /* Blue */
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --border-color: #2d3748;
+            --success: #10b981;
+            --warning: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+        }
+
+        /* --- Sidebar --- */
+        .sidebar {
+            width: 280px;
+            background-color: var(--bg-card);
+            border-right: 1px solid var(--border-color);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .logo {
+            font-size: 1.25rem;
+            font-weight: 700;
+            background: linear-gradient(to right, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .stat-box {
+            background-color: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            padding: 0.75rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        .search-box {
+            background-color: var(--bg-dark);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.75rem;
+            color: var(--text-main);
+            width: 100%;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-box:focus {
+            border-color: var(--accent-primary);
+        }
+
+        /* --- Main Content --- */
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        /* --- Cards --- */
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            /* Para o overlay funcionar */
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            border-color: var(--accent-primary);
+        }
+
+        .card-image {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-bottom: 1px solid var(--border-color);
+            background-color: #000;
+        }
+
+        /* Overlay de Objetivo */
+        .card-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 180px;
+            /* Mesma altura da imagem */
+            background-color: rgba(15, 17, 21, 0.95);
+            padding: 1.5rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .card:hover .card-overlay {
+            opacity: 1;
+        }
+
+        .overlay-text {
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: #fff;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 6;
+            /* Limita número de linhas */
+            -webkit-box-orient: vertical;
+        }
+
+        .overlay-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--accent-primary);
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .card-body {
+            padding: 1rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .card-title {
+            font-weight: 600;
+            font-size: 1rem;
+            line-height: 1.4;
+            color: var(--text-main);
+        }
+
+        .card-meta {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .badge {
+            background-color: rgba(37, 99, 235, 0.1);
+            color: #60a5fa;
+            padding: 0.25rem 0.5rem;
+            border-radius: 99px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+
+        /* --- Modal --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: var(--bg-card);
+            width: 90%;
+            height: 90%;
+            border-radius: 16px;
+            display: flex;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-viewer {
+            flex: 3;
+            background-color: #000;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .modal-img {
+            max-width: 100%;
+            max-height: 85%;
+            object-fit: contain;
+            border-radius: 4px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-nav {
+            margin-top: 1rem;
+            display: flex;
+            gap: 0.5rem;
+            overflow-x: auto;
+            max-width: 100%;
+            padding: 0.5rem;
+        }
+
+        .nav-thumb {
+            height: 50px;
+            width: 80px;
+            object-fit: cover;
+            border-radius: 4px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            opacity: 0.6;
+        }
+
+        .nav-thumb.active {
+            border-color: var(--accent-primary);
+            opacity: 1;
+        }
+
+        .modal-sidebar {
+            flex: 1;
+            background-color: var(--bg-dark);
+            border-left: 1px solid var(--border-color);
+            padding: 1.5rem;
+            overflow-y: auto;
+            min-width: 350px;
+        }
+
+        .modal-header {
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .modal-subtitle {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .info-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .info-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .info-pill {
+            display: inline-block;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 0.25rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            margin-right: 0.4rem;
+            margin-bottom: 0.4rem;
+        }
+
+        .info-text {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #d1d5db;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 2rem;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .nav-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            padding: 1rem;
+            cursor: pointer;
+            font-size: 1.5rem;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+
+        .nav-arrow:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .prev-arrow {
+            left: 1rem;
+        }
+
+        .next-arrow {
+            right: 1rem;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-dark);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #374151;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4b5563;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo">
+            <span>⚡ BI Catalog</span>
+        </div>
+
+        <input type="text" id="searchInput" class="search-box" placeholder="Buscar dashboards..."
+            oninput="filterCatalogs()">
+
+        <div class="stats-container">
+            <div class="stat-box">
+                <div class="stat-value" id="statsTotal">0</div>
+                <div class="stat-label">Dashboards</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="statsPages">0</div>
+                <div class="stat-label">Páginas</div>
+            </div>
+        </div>
+
+        <div
+            style="margin-top: auto; font-size: 0.8rem; color: var(--text-muted); text-align: center; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+            Construído com ☕ nas horas vagas.
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="grid-container" id="cardsGrid">
+            <!-- Cards serão injetados aqui -->
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modalOverlay" onclick="if(event.target === this) closeModal()">
+        <button class="close-btn" onclick="closeModal()">×</button>
+        <div class="modal-content">
+            <div class="modal-viewer">
+                <button class="nav-arrow prev-arrow" onclick="prevPage()">❮</button>
+                <img id="modalMainImage" class="modal-img" src="" alt="Dashboard Screenshot">
+                <button class="nav-arrow next-arrow" onclick="nextPage()">❯</button>
+
+                <div class="modal-nav" id="modalThumbs">
+                    <!-- Thumbnails -->
+                </div>
+            </div>
+
+            <div class="modal-sidebar">
+                <div class="modal-header">
+                    <h2 class="modal-title" id="modalTitle">Título</h2>
+                    <div class="modal-subtitle" id="modalDomain">Domínio</div>
+                </div>
+
+                <div class="info-section">
+                    <div class="info-label">Objetivo</div>
+                    <p class="info-text" id="modalObjective">...</p>
+                </div>
+
+                <div class="info-section">
+                    <div class="info-label">Perguntas Respondidas</div>
+                    <ul class="info-text" id="modalQuestions" style="padding-left: 1.2rem; list-style-type: disc;">
+                        <!-- List Items -->
+                    </ul>
+                </div>
+
+                <div class="info-section">
+                    <div class="info-label">Indicadores Chave</div>
+                    <div id="modalMetrics">
+                        <!-- Pills -->
+                    </div>
+                </div>
+
+                <div class="info-section">
+                    <div class="info-label">Visualização Original</div>
+                    <a id="modalLink" href="#" target="_blank"
+                        style="color: var(--accent-secondary); text-decoration: none;">Abrir no Power BI ↗</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // THIS VARIABLE WILL BE REPLACED BY PYTHON
+        window.CATALOG_DATA = [];
+
+        let currentCatalog = null;
+        let currentPageIndex = 0;
+
+        function init() {
+            renderGrid(window.CATALOG_DATA);
+            updateStats();
+        }
+
+        function updateStats() {
+            document.getElementById('statsTotal').textContent = window.CATALOG_DATA.length;
+            const totalPages = window.CATALOG_DATA.reduce((acc, cat) => acc + (cat.pages.length || 0), 0);
+            document.getElementById('statsPages').textContent = totalPages;
+        }
+
+        function renderGrid(data) {
+            const grid = document.getElementById('cardsGrid');
+            grid.innerHTML = '';
+
+            data.forEach((catalog, index) => {
+                const firstPage = catalog.pages[0];
+                const analysis = firstPage?.analysis || {};
+                const title = analysis.titulo_painel || catalog.url;
+                const domain = analysis.dominio_negocio || 'N/A';
+                const time = new Date(catalog.timestamp).toLocaleDateString('pt-BR');
+                const thumbnail = firstPage?.screenshot_rel_path || '';
+
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.onclick = () => openModal(index);
+
+                // Overlay text
+                const objective = analysis.objetivo_macro || "Sem descrição disponível.";
+
+                card.innerHTML = `
+                    <div style="position: relative;">
+                        <img src="${thumbnail}" class="card-image" loading="lazy">
+                        <div class="card-overlay">
+                            <div class="overlay-label">Objetivo</div>
+                            <div class="overlay-text">${objective}</div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="card-title">${title}</div>
+                        <div class="card-meta">
+                            <span>${domain}</span>
+                            <span class="badge">${catalog.pages.length} págs</span>
+                        </div>
+                        <div class="card-meta" style="margin-top: auto; padding-top: 0.5rem;">
+                            <span>${time}</span>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function filterCatalogs() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = window.CATALOG_DATA.filter(c => {
+                const text = JSON.stringify(c).toLowerCase();
+                return text.includes(query);
+            });
+            renderGrid(filtered);
+        }
+
+        function openModal(index) {
+            currentCatalog = window.CATALOG_DATA[index];
+            currentPageIndex = 0;
+            renderModalContent();
+            document.getElementById('modalOverlay').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('modalOverlay').classList.remove('active');
+        }
+
+        function renderModalContent() {
+            if (!currentCatalog) return;
+
+            const page = currentCatalog.pages[currentPageIndex];
+            const analysis = page.analysis || {};
+
+            // Image
+            document.getElementById('modalMainImage').src = page.screenshot_rel_path;
+
+            // Header
+            document.getElementById('modalTitle').textContent = analysis.titulo_painel || "Sem Título";
+            document.getElementById('modalDomain').textContent = `${analysis.dominio_negocio || 'Geral'} • Pág ${currentPageIndex + 1}/${currentCatalog.pages.length}`;
+
+            // Link
+            document.getElementById('modalLink').href = currentCatalog.url;
+
+            // Text Fields
+            document.getElementById('modalObjective').textContent = analysis.objetivo_macro || "Não disponível.";
+
+            // Questions
+            const qContainer = document.getElementById('modalQuestions');
+            qContainer.innerHTML = '';
+            (analysis.perguntas_respondidas || []).forEach(q => {
+                const li = document.createElement('li');
+                li.textContent = q;
+                qContainer.appendChild(li);
+            });
+
+            // Metrics
+            const mContainer = document.getElementById('modalMetrics');
+            mContainer.innerHTML = '';
+            (analysis.principais_indicadores || []).forEach(m => {
+                const span = document.createElement('span');
+                span.className = 'info-pill';
+                span.textContent = m;
+                mContainer.appendChild(span);
+            });
+
+            // Thumbs
+            const tContainer = document.getElementById('modalThumbs');
+            tContainer.innerHTML = '';
+            currentCatalog.pages.forEach((p, idx) => {
+                const img = document.createElement('img');
+                img.src = p.screenshot_rel_path;
+                img.className = `nav-thumb ${idx === currentPageIndex ? 'active' : ''}`;
+                img.onclick = () => {
+                    currentPageIndex = idx;
+                    renderModalContent();
+                };
+                tContainer.appendChild(img);
+            });
+        }
+
+        function nextPage() {
+            if (currentCatalog && currentPageIndex < currentCatalog.pages.length - 1) {
+                currentPageIndex++;
+                renderModalContent();
+            }
+        }
+
+        function prevPage() {
+            if (currentCatalog && currentPageIndex > 0) {
+                currentPageIndex--;
+                renderModalContent();
+            }
+        }
+
+        // Initialize
+        if (window.CATALOG_DATA.length > 0) {
+            init();
+        } else {
+            // Placeholder for dev mode testing
+            // window.CATALOG_DATA = [...mockData];
+            init();
+        }
+    </script>
+</body>
+
+</html>

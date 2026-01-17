@@ -181,10 +181,16 @@ class GeminiService:
         2. NÃO tire insights do momento (ex: não diga "A venda caiu", diga "Permite analisar tendência de vendas").
         3. A descrição deve ser válida hoje, mês que vem ou ano que vem, independente dos dados mudarem.
         
+        REGRAS PARA TÍTULOS INTELIGENTES:
+        - O campo 'titulo_painel' deve ser o título visível na tela.
+        - PORÉM, se o título visível for genérico ou ruim (ex: "Overview", "Home", "Página 1", "Report", "Sem Título"), você DEVE INVENTAR um título melhor baseado no contexto.
+        - Exemplo: Se vê "Overview" mas a tela é sobre Vendas e Lucro, use "Visão Geral De Vendas E Lucro".
+        - Formatação: Use SEMPRE "Title Case" (Primeira Letra De Cada Palavra Maiúscula), exceto para preposições curtas (de, da, do, e).
+        
         Analise a imagem e gere um JSON estrito com:
         
         {
-          "titulo_painel": "Título oficial identificado no topo",
+          "titulo_painel": "Título oficial ou título sugerido melhorado (Title Case)",
           "objetivo_macro": "Para que serve este painel? (Ex: 'Monitoramento de performance operacional' ou 'Comparativo estratégico entre países')",
           "perguntas_respondidas": [
              "Liste 3 a 5 perguntas de negócio que um usuário consegue responder usando esta tela.",

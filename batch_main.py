@@ -4,6 +4,7 @@ import logging
 from pathlib import Path
 from playwright.async_api import async_playwright
 
+import reporter
 from cataloger import DashboardCataloger
 from utils import setup_logger, current_worker_id
 
@@ -98,6 +99,12 @@ async def main():
             await browser.close()
 
     logger.info("✨ Processamento em Lote Finalizado! ✨")
+    
+    # Gera relatório estático final
+    try:
+        reporter.generate_report()
+    except Exception as e:
+        logger.error(f"Erro ao gerar relatorio final: {e}")
 
 if __name__ == "__main__":
     # Windows Selector Event Loop Policy fix - REMOVIDO
