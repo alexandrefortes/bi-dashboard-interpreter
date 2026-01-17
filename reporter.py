@@ -17,11 +17,10 @@ def setup_report_dir():
     images_path = report_path / IMAGES_DIR
     
     if report_path.exists():
-        # Opção: Limpar tudo para garantir que não haja lixo de runs antigos
-        # Se ficar muito lento com muitas imagens, podemos otimizar depois
-        pass 
-    else:
-        report_path.mkdir(parents=True, exist_ok=True)
+        # Limpa tudo para garantir consistência (remove imagens de runs deletados)
+        shutil.rmtree(report_path)
+    
+    report_path.mkdir(parents=True, exist_ok=True)
         
     if not images_path.exists():
         images_path.mkdir(parents=True, exist_ok=True)
