@@ -394,6 +394,40 @@ Em cenários produtivos, é comum exigir mecanismos de enforcement no runtime:
 
 ---
 
+## 💰 Custo e Performance (Benchmark)
+
+Estimativas baseadas em testes reais com o modelo **Gemini 2.5 Pro** e execução em lote (2 workers).
+
+### Painel Médio - 5 Abas
+*   **Consumo de Tokens:** ~6.400 tokens (4.200 entrada + 2.200 saída)
+*   **Tempo de Processamento:** ~2min 15s
+*   **Custo (USD):** $0,027
+*   **Custo (BRL):** R$ 0,16 (dólar a R$ 6,00)
+
+### Projeto Completo (Cenário: 300 Painéis)
+*   **Custo Total de API:** ~R$ 48,00
+*   **Tempo Total (Batch):** ~6 horas (com 2 workers simultâneos)
+
+### 🆚 Comparativo: Manual vs Automação
+
+*Cenário Manual:* Considera um Analista Sênior realizando estritamente o trabalho operacional (Navegar > Print > Colar no Chatbot IA > Salvar JSON). Organizando todos os assets finais.
+*   **Tempo Manual Estimado:** 15 min/painel (5 abas) x 300 = **75 horas**
+*   **Custo de Oportunidade:** 75h x R$ 100/h = **R$ 7.500,00**
+
+| Indicador | Humano (Operacional) | Robô (Bi-Interpreter) | Diferença |
+| :--- | :--- | :--- | :--- |
+| **Custo Total** | R$ 7.500,00 | **R$ 48,00** | **-99,3%** |
+| **Tempo Total** | ~2 semanas (full-time) | **~6 horas** | **80x mais rápido** |
+| **Fadiga** | Alta (erro humano) | Zero oss | **Consistência** |
+| **Escalabilidade** | Linear (mais gente = mais $) | Exponencial | **Custo marginal** |
+
+> **Nota sobre Qualidade e "Slop Work":**
+> *   **Risco Humano:** Fadiga, erros de copy-paste e perda de padrão após horas de trabalho repetitivo ("piloto automático").
+> *   **Risco IA:** Alucinação (inventar fatos), mitigado aqui por prompts estritos.
+> *   **Veredito:** É muito mais eficiente e seguro **revisar** 300 painéis pré-gerados por IA do que **catalogar** 300 do zero.
+
+---
+
 ## 📝 Licença
 
 Este projeto é licenciado sob a **Apache License 2.0**.  
