@@ -1,0 +1,12 @@
+{
+  "nav_reflection": "O método de navegação principal identificado é o rodapé nativo do Power BI (native_footer), pois está claramente visível na parte inferior da tela com o indicador de página ('1 de 4') e as setas de navegação. Conforme as regras de priorização, a presença deste rodapé o torna o método principal. Embora exista um segundo método de navegação personalizado no formato de uma lista à esquerda (left_list) com os botões 'Inventory Overview', 'Category Summary', etc., ele é considerado secundário de acordo com as instruções.",
+  "nav_type": "native_footer",
+  "page_count_visual": "1 de 4",
+  "targets": [
+    {
+      "label": "Next Page Button",
+      "x": 0.521,
+      "y": 0.98
+    }
+  ]
+}

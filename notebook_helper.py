@@ -8,16 +8,56 @@ import reporter
 RUNS_DIR = Path("runs")
 REPORT_DIR = Path("bi_catalog_report")
 URLS_FILE = Path("urls.json")
+URLS_OLD_FILE = Path("urls_old.json")
 PROCESSED_LOG = RUNS_DIR / "processed_urls.json"
+
+def load_urls():
+    """Carrega as URLs atuais do arquivo json (para preencher a interface)."""
+    if URLS_FILE.exists():
+        try:
+            with open(URLS_FILE, 'r', encoding='utf-8') as f:
+                urls = json.load(f)
+            return "\n".join(urls)
+        except:
+            return ""
+    return ""
+
+def _backup_and_save_urls(target_urls):
+    """Lógica interna: Faz backup do urls.json atual e salva o novo."""
+    # 1. Backup
+    if URLS_FILE.exists():
+        try:
+            shutil.copy2(URLS_FILE, URLS_OLD_FILE)
+            print(f"💾 Backup criado: {URLS_OLD_FILE.name}")
+        except Exception as e:
+            print(f"⚠️ Falha no backup: {e}")
+            
+    # 2. Salvar Novo
+    with open(URLS_FILE, "w", encoding="utf-8") as f:
+        json.dump(list(target_urls), f, indent=2)
+    print(f"📝 Arquivo 'urls.json' atualizado com {len(target_urls)} URLs.")
+
+def get_old_urls_content():
+    """Lê o conteúdo do backup para exibição."""
+    if URLS_OLD_FILE.exists():
+        try:
+            with open(URLS_OLD_FILE, 'r', encoding='utf-8') as f:
+                return json.dump(json.load(f), indent=2) # retorna string formatada? Não, json.load retorna obj, quero texto
+                # Melhor: ler texto direto
+        except:
+            pass
+            
+    if URLS_OLD_FILE.exists():
+        return URLS_OLD_FILE.read_text(encoding='utf-8')
+    return None
 
 def smart_update(urls_list):
     """
     Executa a lógica de 'Smart Update':
     1. Limpa histórico (pastas e JSON) para as URLs fornecidas.
     2. Reseta a pasta de relatório.
-    3. Atualiza urls.json.
+    3. Atualiza urls.json (com backup).
     """
-    # Normaliza
     target_urls = set(u.strip() for u in urls_list if u.strip())
     
     if not target_urls:
@@ -27,7 +67,7 @@ def smart_update(urls_list):
     cleaned_count = 0
     print(f"🔄 Iniciando Smart Update para {len(target_urls)} painéis...")
 
-    # 1. Limpa do arquivo central de memória (processed_urls.json)
+    # 1. Limpa Memory (processed_urls.json)
     if PROCESSED_LOG.exists():
         try:
             with open(PROCESSED_LOG, 'r', encoding='utf-8') as f:
@@ -45,7 +85,7 @@ def smart_update(urls_list):
         except Exception as e:
             print(f"⚠️ Erro ao atualizar processed_urls.json: {e}")
 
-    # 2. Limpa as pastas físicas
+    # 2. Limpa Pastas Físicas
     if RUNS_DIR.exists():
         found_files = list(RUNS_DIR.glob("**/catalog_*.json"))
         for json_file in found_files:
@@ -64,7 +104,7 @@ def smart_update(urls_list):
             except Exception as e:
                 print(f"⚠️ Erro ao processar arquivo {json_file}: {e}")
 
-    # 3. Reseta Interface Gráfica
+    # 3. Reseta Interface
     if REPORT_DIR.exists():
         try:
             shutil.rmtree(REPORT_DIR)
@@ -72,36 +112,40 @@ def smart_update(urls_list):
         except Exception as e:
             print(f"❌ Erro ao limpar report dir: {e}")
 
-    # 4. Salva urls.json
-    with open(URLS_FILE, "w", encoding="utf-8") as f:
-        json.dump(list(target_urls), f, indent=2)
+    # 4. Salva urls.json (com Backup)
+    _backup_and_save_urls(target_urls)
 
-    print(f"📝 Arquivo 'urls.json' atualizado.")
     print(f"🚀 Tudo pronto! Execute: !python batch_main.py")
     return True
 
-def reset_all():
-    """Destrói todo o histórico e outputs."""
-    folders = [RUNS_DIR, REPORT_DIR]
-    print("☢️  Iniciando Reset Total...")
+def save_urls_simple(urls_list):
+    """
+    Apenas atualiza o urls.json (com backup), SEM deletar runs antigos.
+    Use para adicionar novos painéis ou reprocessar sem limpar histórico.
+    """
+    target_urls = set(u.strip() for u in urls_list if u.strip())
     
-    for folder in folders:
-        if folder.exists():
-            try:
-                shutil.rmtree(folder)
-                print(f"✅ Deletado: {folder}")
-            except Exception as e:
-                print(f"❌ Erro ao deletar {folder}: {e}")
-        else:
-            print(f"ℹ️  Já não existia: {folder}")
-            
-    print("✨ Ambiente resetado com sucesso.")
+    if not target_urls:
+        print("⚠️ Nenhuma URL válida fornecida.")
+        return False
+        
+    print(f"💾 Salvando {len(target_urls)} URLs para processamento (Sem Limpeza)...")
+    _backup_and_save_urls(target_urls)
+    print(f"🚀 Tudo pronto! Execute: !python batch_main.py")
+    return True
 
-def define_urls(urls_text):
-    """Helper simples para salvar urls.json direto da caixa de texto."""
+def define_urls(urls_text, mode="smart"):
+    """
+    Helper principal.
+    mode="smart" -> Smart Update (Limpa histórico)
+    mode="simple" -> Apenas Salva (Mantém histórico)
+    """
     urls = [line.strip() for line in urls_text.split('\n') if line.strip()]
-    if urls:
+    
+    if mode == "smart":
         return smart_update(urls)
+    elif mode == "simple":
+        return save_urls_simple(urls)
     else:
-        print("⚠️ Caixa de texto vazia.")
+        print("Modo inválido")
         return False

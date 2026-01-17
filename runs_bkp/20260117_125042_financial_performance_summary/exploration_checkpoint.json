@@ -1,0 +1,25 @@
+[
+  {
+    "id": 0,
+    "label": "Home",
+    "filename": "00_home.png"
+  },
+  {
+    "id": 1,
+    "label": "Next Page (1/3)",
+    "filename": "01_target.png",
+    "hash": "c6687143c61c7af6"
+  },
+  {
+    "id": 2,
+    "label": "Next Page (2/3)",
+    "filename": "02_target.png",
+    "hash": "d2696542867978de"
+  },
+  {
+    "id": 3,
+    "label": "Next Page (3/3)",
+    "filename": "03_target.png",
+    "hash": "c17464636a7af887"
+  }
+]

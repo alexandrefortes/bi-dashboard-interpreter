@@ -1,0 +1,14 @@
+{
+  "nav_reflection": "A barra de rodap\u00e9 nativa do Power BI \u00e9 claramente vis\u00edvel na parte inferior da tela, exibindo o contador '1 de 3' e as setas de navega\u00e7\u00e3o. De acordo com as regras de prioridade, este \u00e9 o m\u00e9todo de navega\u00e7\u00e3o principal a ser relatado. Al\u00e9m disso, h\u00e1 um sistema de navega\u00e7\u00e3o secund\u00e1rio no lado esquerdo com bot\u00f5es ('Summary', 'Media Analytics', 'Target Audience'), que seria classificado como 'left_list', mas o rodap\u00e9 nativo tem preced\u00eancia.",
+  "nav_type": "native_footer",
+  "page_count_visual": "1 de 3",
+  "targets": [
+    {
+      "label": "Next Page Button",
+      "x": 0.491,
+      "y": 0.982
+    }
+  ],
+  "raw_response": "{\n  \"nav_reflection\": \"A barra de rodap\u00e9 nativa do Power BI \u00e9 claramente vis\u00edvel na parte inferior da tela, exibindo o contador '1 de 3' e as setas de navega\u00e7\u00e3o. De acordo com as regras de prioridade, este \u00e9 o m\u00e9todo de navega\u00e7\u00e3o principal a ser relatado. Al\u00e9m disso, h\u00e1 um sistema de navega\u00e7\u00e3o secund\u00e1rio no lado esquerdo com bot\u00f5es ('Summary', 'Media Analytics', 'Target Audience'), que seria classificado como 'left_list', mas o rodap\u00e9 nativo tem preced\u00eancia.\",\n  \"nav_type\": \"native_footer\",\n  \"page_count_visual\": \"1 de 3\",\n  \"targets\": [\n    {\n      \"label\": \"Next Page Button\",\n      \"x\": 0.491,\n      \"y\": 0.982\n    }\n  ]\n}",
+  "_meta_run_id": "20260117_124806"
+}

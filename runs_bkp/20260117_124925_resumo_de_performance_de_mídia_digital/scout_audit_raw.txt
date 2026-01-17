@@ -1,0 +1,12 @@
+{
+  "nav_reflection": "A barra de rodapé nativa do Power BI é claramente visível na parte inferior da tela, exibindo o contador '1 de 3' e as setas de navegação. De acordo com as regras de prioridade, este é o método de navegação principal a ser relatado. Além disso, há um sistema de navegação secundário no lado esquerdo com botões ('Summary', 'Media Analytics', 'Target Audience'), que seria classificado como 'left_list', mas o rodapé nativo tem precedência.",
+  "nav_type": "native_footer",
+  "page_count_visual": "1 de 3",
+  "targets": [
+    {
+      "label": "Next Page Button",
+      "x": 0.491,
+      "y": 0.982
+    }
+  ]
+}

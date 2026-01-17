@@ -1,0 +1,53 @@
+{
+  "run_id": "20260117_174515",
+  "url": "https://app.fabric.microsoft.com/view?r=eyJrIjoiYTA3ZDQ3ZmQtYzFlMi00YTYyLTgwNjgtYWU4OGU0YzNmYzc1IiwidCI6IjE2ZGVlZGU4LTc5ZTktNGUzMy05OWU2LTlkOGQzOTQyZDc5NiIsImMiOjEwfQ%3D%3D",
+  "timestamp": "2026-01-17T17:45:15.582807",
+  "navigation_structure": {
+    "nav_reflection": "A análise não identificou um rodapé de navegação nativo do Power BI (native_footer) na parte inferior da tela. Em vez disso, foi observada uma barra de navegação vertical personalizada no lado esquerdo do relatório. Esta barra contém um único ícone visível, que parece ser um botão 'Home', indicando um sistema de navegação do tipo lista à esquerda. Este é o principal método de navegação entre as páginas do relatório. Os botões 'YTD' e 'MTD' no canto superior direito foram desconsiderados, pois funcionam como filtros de dados e não como navegação principal.",
+    "nav_type": "left_list",
+    "page_count_visual": null,
+    "targets": [
+      {
+        "label": "Home",
+        "x": 0.042,
+        "y": 0.046
+      }
+    ],
+    "_meta_run_id": "20260117_174342"
+  },
+  "pages": [
+    {
+      "id": 0,
+      "label": "Home",
+      "filename": "00_home.png",
+      "analysis": {
+        "titulo_painel": "Visão Geral de Performance Financeira",
+        "objetivo_macro": "Monitorar a performance financeira e de vendas da empresa, permitindo a análise de receita, lucro, custo e margem em comparação com o ano anterior e detalhamento por dimensões de negócio.",
+        "perguntas_respondidas": [
+          "Qual a performance financeira geral (receita, lucro, custo) e sua variação em relação ao ano anterior?",
+          "Como a receita total é decomposta entre as diferentes regiões e segmentos de mercado?",
+          "Quais são os principais segmentos e regiões em termos de contribuição para a receita?",
+          "Qual é a tendência histórica de vendas e lucro ao longo do tempo?",
+          "Quais são os produtos com maior volume de vendas?"
+        ],
+        "dominio_negocio": "Financeiro",
+        "elementos_visuais": "Painel composto por cartões de KPI, um gráfico de decomposição da receita por região e segmento, gráficos de barras comparativos, um gráfico de área para análise de tendências históricas e um gráfico de barras horizontais para o ranking de produtos.",
+        "filtros_visiveis": [
+          "Período (YTD/MTD)",
+          "Região",
+          "Segmento",
+          "Métrica de Tendência (Vendas/Lucro)"
+        ],
+        "principais_indicadores": [
+          "Receita Total",
+          "Lucro Total",
+          "Margem de Lucro",
+          "Custo Total",
+          "Receita por Segmento",
+          "Receita por Região"
+        ],
+        "publico_sugerido": "Executivo"
+      }
+    }
+  ]
+}

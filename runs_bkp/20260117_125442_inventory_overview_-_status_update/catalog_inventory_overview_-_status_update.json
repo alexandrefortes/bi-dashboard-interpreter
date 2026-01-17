@@ -1,0 +1,159 @@
+{
+  "run_id": "20260117_125442",
+  "url": "https://app.fabric.microsoft.com/view?r=eyJrIjoiYTk2OTcyMWQtOGNmNC00NGJiLThjODMtMGFkN2JjNzJkYzBhIiwidCI6ImE5NDUyNTg2LTJmNGMtNGNiMS04ZDJlLTI2ODkyODllZTcyNiIsImMiOjl9",
+  "timestamp": "2026-01-17T12:54:42.593901",
+  "navigation_structure": {
+    "nav_reflection": "O método de navegação principal identificado é o rodapé nativo do Power BI (native_footer), pois está claramente visível na parte inferior da tela com o indicador de página ('1 de 4') e as setas de navegação. Conforme as regras de priorização, a presença deste rodapé o torna o método principal. Embora exista um segundo método de navegação personalizado no formato de uma lista à esquerda (left_list) com os botões 'Inventory Overview', 'Category Summary', etc., ele é considerado secundário de acordo com as instruções.",
+    "nav_type": "native_footer",
+    "page_count_visual": "1 de 4",
+    "targets": [
+      {
+        "label": "Next Page Button",
+        "x": 0.521,
+        "y": 0.98
+      }
+    ],
+    "_meta_run_id": "20260117_125256"
+  },
+  "pages": [
+    {
+      "id": 0,
+      "label": "Home",
+      "filename": "00_home.png",
+      "analysis": {
+        "titulo_painel": "Inventory Overview - Status Update",
+        "objetivo_macro": "Monitorar a saúde e o status geral do inventário, fornecendo uma visão consolidada dos principais indicadores de estoque e produtos.",
+        "perguntas_respondidas": [
+          "Qual é a tendência mensal do número total de SKUs em estoque?",
+          "Qual a proporção de produtos que necessitam de reposição imediata versus os que não necessitam?",
+          "Como os SKUs estão distribuídos por categoria e por nível de estoque (alto, médio, baixo)?",
+          "Quais são os 10 produtos mais valiosos em estoque e quando foi a última data de reposição de cada um?",
+          "Qual é o valor total, a quantidade, o preço médio e o tempo médio de entrega (lead time) do inventário?"
+        ],
+        "dominio_negocio": "Logística",
+        "elementos_visuais": "Composto por uma fileira de cartões de KPIs, um gráfico de linha para análise de tendência temporal, dois gráficos de rosca para distribuição percentual por status, um gráfico de barras empilhadas para análise categórica e uma tabela detalhada com o ranking de produtos.",
+        "filtros_visiveis": [
+          "Year",
+          "Month",
+          "Status",
+          "Warehouse"
+        ],
+        "principais_indicadores": [
+          "Total SKUs",
+          "Stock Qty (Quantidade em Estoque)",
+          "Stock Value (Valor do Estoque)",
+          "Avg Price (Preço Médio)",
+          "Avg Leadtimedays (Dias de Lead Time Médio)",
+          "ReOrder Status (Status de Reposição)",
+          "Stock Level (Nível de Estoque)"
+        ],
+        "publico_sugerido": "Analista de Mercado"
+      }
+    },
+    {
+      "id": 1,
+      "label": "Next Page (1/3)",
+      "filename": "01_target.png",
+      "analysis": {
+        "titulo_painel": "Resumo de Inventário por Categoria de Produto",
+        "objetivo_macro": "Fornecer uma visão consolidada da saúde do inventário, segmentada por categoria de produto, para apoiar decisões táticas e operacionais de reposição e gestão de estoque.",
+        "perguntas_respondidas": [
+          "Quais categorias de produto possuem maior risco de ruptura de estoque (out-of-stock)?",
+          "Qual a distribuição de produtos por status de validade (curta, média, longa) em cada categoria?",
+          "Existe uma correlação entre o tempo de entrega do fornecedor e os dias de validade dos produtos?",
+          "Como está a performance do inventário em relação ao mês anterior para cada categoria?",
+          "Quais categorias têm a maior quantidade de itens que necessitam de reposição imediata?"
+        ],
+        "dominio_negocio": "Logística e Cadeia de Suprimentos",
+        "elementos_visuais": "Composto por cartões de KPIs para cada categoria de produto, gráficos de barras agrupadas para análise de status de reposição, nível de estoque e validade, e um gráfico de dispersão que correlaciona o tempo de entrega do fornecedor com os dias de validade do produto.",
+        "filtros_visiveis": [
+          "Ano",
+          "Mês",
+          "Status do Estoque",
+          "Armazém"
+        ],
+        "principais_indicadores": [
+          "Quantidade de Itens por Categoria",
+          "Variação Percentual Mensal (MoM)",
+          "Percentual Fora de Estoque",
+          "Percentual de SKUs Abaixo do Ponto de Reposição",
+          "Contagem de Produtos por Status de Validade",
+          "Média de Dias de Lead Time",
+          "Média de Dias para Vencimento"
+        ],
+        "publico_sugerido": "Analista de Cadeia de Suprimentos"
+      }
+    },
+    {
+      "id": 2,
+      "label": "Next Page (2/3)",
+      "filename": "02_target.png",
+      "analysis": {
+        "titulo_painel": "Visão Geral de Inventário - Ações por Produto",
+        "objetivo_macro": "Facilitar a tomada de decisão operacional sobre a gestão de estoque, fornecendo um diagnóstico e ações recomendadas para cada produto com base em seu status atual.",
+        "perguntas_respondidas": [
+          "Quais produtos exigem ação imediata devido a problemas com fornecedor, estoque baixo ou excessivo?",
+          "Quais são as ações corretivas sugeridas para normalizar os níveis de estoque de um produto específico?",
+          "Existem produtos com movimentação lenta que precisam de promoções ou outras ações de estímulo?",
+          "Qual o status de expiração dos produtos em estoque para priorizar a venda?",
+          "Para um produto com problema de fornecedor, qual o tempo de reposição estimado e quais as alternativas?"
+        ],
+        "dominio_negocio": "Logística e Gestão de Estoque",
+        "elementos_visuais": "Matriz detalhada que lista produtos individualmente e apresenta, em colunas, o diagnóstico e as ações recomendadas para diferentes categorias de status de inventário (fornecedor, nível de estoque, movimentação, expiração).",
+        "filtros_visiveis": [
+          "Category",
+          "Expiry Category",
+          "Country",
+          "Stock Level",
+          "Year",
+          "Month",
+          "Stock Status",
+          "Warehouse"
+        ],
+        "principais_indicadores": [
+          "Status do Fornecedor",
+          "Status do Nível de Estoque (Baixo, Saudável, Excesso)",
+          "Status de Movimentação de Estoque (Lento, Saudável)",
+          "Categoria de Expiração",
+          "Unidades em Estoque",
+          "Dias de Cobertura de Estoque",
+          "Tempo Estimado de Reposição"
+        ],
+        "publico_sugerido": "Operacional"
+      }
+    },
+    {
+      "id": 3,
+      "label": "Next Page (3/3)",
+      "filename": "03_target.png",
+      "analysis": {
+        "titulo_painel": "Visão Geral de Inventário - Avaliação de Valor por Região",
+        "objetivo_macro": "Avaliar a composição e o valor do inventário, com foco na identificação de estoque obsoleto (dead stock) por região e categoria de produto, a fim de otimizar a gestão e reduzir perdas financeiras.",
+        "perguntas_respondidas": [
+          "Quais países concentram o maior valor ou quantidade de SKUs em estoque?",
+          "Qual é a proporção de estoque ativo versus estoque obsoleto por categoria de produto?",
+          "Qual o valor total do inventário e quanto dele é considerado obsoleto?",
+          "Como a distribuição do estoque se altera ao filtrar por um armazém ou período específico?"
+        ],
+        "dominio_negocio": "Logística e Gestão de Estoque",
+        "elementos_visuais": "Estrutura composta por cartões de KPIs totalizadores na parte superior, um gráfico de barras horizontal para ranqueamento de países por indicador selecionável, e gráficos de barras verticais para análise comparativa entre estoque ativo e obsoleto por categoria, tanto em volume (SKUs) quanto em valor financeiro.",
+        "filtros_visiveis": [
+          "Ano",
+          "Mês",
+          "Status do Estoque",
+          "Armazém",
+          "Seleção de KPI (para ranking de países)"
+        ],
+        "principais_indicadores": [
+          "Valor Total do Inventário",
+          "Total de SKUs",
+          "Valor do Estoque Obsoleto",
+          "SKUs de Estoque Obsoleto",
+          "Valor do Estoque Ativo",
+          "SKUs de Estoque Ativo"
+        ],
+        "publico_sugerido": "Analista de Negócios / Operacional"
+      }
+    }
+  ]
+}

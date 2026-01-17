@@ -1,0 +1,117 @@
+{
+  "run_id": "20260117_125222",
+  "url": "https://app.fabric.microsoft.com/view?r=eyJrIjoiNDUxNjdkM2MtNjM2Yi00MmM3LWIzZmYtZjYzMzcxYTMwM2E5IiwidCI6ImE5NDUyNTg2LTJmNGMtNGNiMS04ZDJlLTI2ODkyODllZTcyNiIsImMiOjl9",
+  "timestamp": "2026-01-17T12:52:22.321486",
+  "navigation_structure": {
+    "nav_reflection": "A barra de navegação nativa do Power BI é claramente visível na parte inferior da tela, contendo o indicador de página '1 de 3' e setas de navegação. Conforme as regras de prioridade, este é identificado como o método de navegação principal. Embora existam outros elementos de navegação potenciais, como uma lista de ícones à esquerda e abas no topo ('Insights', 'Recommendations'), o rodapé nativo tem a precedência mais alta.",
+    "nav_type": "native_footer",
+    "page_count_visual": "1 de 3",
+    "targets": [
+      {
+        "label": "Next Page Button",
+        "x": 0.51,
+        "y": 0.985
+      }
+    ],
+    "_meta_run_id": "20260117_125056"
+  },
+  "pages": [
+    {
+      "id": 0,
+      "label": "Home",
+      "filename": "00_home.png",
+      "analysis": {
+        "titulo_painel": "Sales and Profit Performance Overview",
+        "objetivo_macro": "Monitorar a performance comercial e financeira, focando em indicadores de vendas e lucratividade, e permitindo a análise comparativa com o ano anterior.",
+        "perguntas_respondidas": [
+          "Qual o desempenho de vendas, lucro e margem em comparação com o ano anterior?",
+          "Quais regiões, categorias de produtos e modos de envio possuem maior representatividade nas vendas?",
+          "Qual é a sazonalidade das vendas ao longo dos meses?",
+          "Como os clientes se distribuem por segmento?",
+          "Qual a tendência de um indicador ao longo do tempo para um período selecionado?"
+        ],
+        "dominio_negocio": "Vendas",
+        "elementos_visuais": "Layout composto por cartões de KPIs no topo, um gráfico de barras horizontal para análise regional, gráficos de rosca para distribuição de vendas e clientes, um gráfico de colunas para evolução mensal e um gráfico de área para análise de tendência em um período selecionado.",
+        "filtros_visiveis": [
+          "Período de Análise (dias)",
+          "Métrica de Análise Regional (Vendas, Lucro, Margem, Pedidos)"
+        ],
+        "principais_indicadores": [
+          "Total Sales",
+          "Total Profit",
+          "Profit Margin",
+          "Orders",
+          "Total Customers",
+          "Variação vs Ano Anterior (PY)"
+        ],
+        "publico_sugerido": "Executivo, Analista de Mercado"
+      }
+    },
+    {
+      "id": 1,
+      "label": "Next Page (1/2)",
+      "filename": "01_target.png",
+      "analysis": {
+        "titulo_painel": "Ship Mode Performance Overview",
+        "objetivo_macro": "Monitorar e analisar a eficiência operacional e o resultado financeiro das diferentes modalidades de entrega (Ship Mode), correlacionando-as com vendas, lucratividade e devoluções.",
+        "perguntas_respondidas": [
+          "Qual modalidade de envio (Ship Mode) é a mais utilizada para cada categoria de produto?",
+          "Como o tempo médio de entrega varia sazonalmente ao longo do ano?",
+          "Qual é a relação entre a modalidade de envio, a lucratividade e o volume de devoluções?",
+          "Como a performance de vendas se distribui trimestralmente entre os diferentes vendedores?",
+          "Quais modalidades de entrega atendem aos diferentes prazos de entrega (24 horas, 1-2 dias, etc.)?"
+        ],
+        "dominio_negocio": "Logística e Vendas",
+        "elementos_visuais": "Painel composto por cartões de KPIs, gráficos de rosca para análise de composição percentual, gráficos de barras para comparação de volumes, um gráfico de linha para análise de tendência temporal e uma tabela detalhada que sumariza os principais indicadores por modalidade de envio.",
+        "filtros_visiveis": [
+          "Sales People",
+          "Product Category (na legenda do gráfico)",
+          "Métrica de Vendas (Total Sales, Total Profit, Profit Margin, Orders)"
+        ],
+        "principais_indicadores": [
+          "Total Sales",
+          "Avg Delivery Days",
+          "Total Customers",
+          "Return Insights",
+          "Total Profit",
+          "Profit Margin",
+          "Orders"
+        ],
+        "publico_sugerido": "Analista de Negócios e Gestor de Operações"
+      }
+    },
+    {
+      "id": 2,
+      "label": "Next Page (2/2)",
+      "filename": "02_target.png",
+      "analysis": {
+        "titulo_painel": "Geographic Performance Overview",
+        "objetivo_macro": "Monitorar e analisar a performance de vendas e devoluções por região geográfica e segmento de cliente.",
+        "perguntas_respondidas": [
+          "Quais países lideram em volume de vendas e lucro?",
+          "Qual o desempenho de vendas por país para cada segmento de cliente (Consumidor, Corporativo, etc.)?",
+          "Qual é a tendência mensal da taxa de devolução de pedidos ao longo do ano?",
+          "Existe alguma correlação entre o modo de envio (Ship Mode) e a taxa de devolução?",
+          "Como o número total de clientes e o volume de devoluções se comparam com o período anterior?"
+        ],
+        "dominio_negocio": "Vendas",
+        "elementos_visuais": "Composto por cartões de KPIs totalizadores, um gráfico de linha para análise de tendência mensal, uma tabela matriz para detalhamento de métricas por país e segmento, e um gráfico de dispersão para análise de correlação entre o modo de envio e a taxa de devolução.",
+        "filtros_visiveis": [
+          "Métrica na tabela (Total Sales, Total Profit, Profit Margin, Orders)"
+        ],
+        "principais_indicadores": [
+          "Total Customers",
+          "Return Insights",
+          "Countries",
+          "Products",
+          "Return Rate",
+          "Total Sales",
+          "Total Profit",
+          "Profit Margin",
+          "Unique Orders"
+        ],
+        "publico_sugerido": "Analista de Vendas"
+      }
+    }
+  ]
+}

@@ -44,8 +44,12 @@ O código segue princípios de responsabilidade única:
 1. **Instale as dependências:**
 ```bash
 pip install -r requirements.txt
-
 ```
+
+> **✨ Ou, conte com a Instalação Automática**
+> Ao executar a primeira célula do notebook `bi-dashboard-interpreter.ipynb` pela primeira vez, o sistema detecta se as dependências já foram instaladas. Se não, ele instala tudo automaticamente (incluindo o Playwright) sem você precisar abrir o terminal.
+>
+> ![Instalação Automática de Dependências](hello-world/instalacao_dependencias.png)
 
 2. **Configure o ambiente:**
 Crie um arquivo `.env` na raiz com sua chave:
