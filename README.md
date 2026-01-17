@@ -4,6 +4,10 @@
 
 *A visual-first cataloger for BI dashboards (UI automation + multimodal AI).*
 
+<video src="hello-world/overview.mp4" width="100%" controls>
+  Seu navegador não suporta o player de vídeo.
+</video>
+
 Este projeto utiliza IA Multimodal (Gemini 2.5 pro) e Automação de Navegador (Playwright) para navegar, capturar e documentar funcionalmente painéis de Business Intelligence (Power BI, etc.) automaticamente.
 
 > Execute apenas com credenciais próprias e em conteúdos cuja captura/armazenamento (prints e metadados) seja permitido pelas políticas do ambiente.
@@ -460,7 +464,20 @@ Estimativas baseadas em testes reais com o modelo **Gemini 2.5 Pro** e execuçã
 
 ---
 
+## 👤 Sobre o Autor
+
+**Alexandre Fortes**  
+*Data & AI Executive @ Efí Bank*
+
+Executivo de Dados e IA com atuação "hands-on". Especialista em colocar sistemas de LLM em produção (end-to-end), desde o desenho do problema até a entrega segura em operações críticas. 
+
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue?style=for-the-badge&logo=linkedin)](https://www.linkedin.com/in/alexandre-f-santana/)
+[![GitHub](https://img.shields.io/badge/GitHub-Follow-black?style=for-the-badge&logo=github)](https://github.com/alexandrefortes)
+
+---
+
 ## 📝 Licença
+
 
 Este projeto é licenciado sob a **Apache License 2.0**.  
 Consulte o arquivo [LICENSE](LICENSE) para mais detalhes.
