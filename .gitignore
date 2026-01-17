@@ -209,3 +209,4 @@ __marimo__/
 # Custom
 runs/
 urls.json
+.deps_installed.txt

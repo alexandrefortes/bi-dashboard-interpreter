@@ -8,7 +8,8 @@ def install():
         "pillow",         # Processamento de imagem
         "imagehash",      # Comparação de imagens
         "google-genai",   # Inteligência Artificial
-        "python-dotenv"   # Variáveis de ambiente
+        "python-dotenv",  # Variáveis de ambiente
+        "ipywidgets"      # Interface Visual para Notebooks
     ]
     
     print("🔧 Iniciando instalação de dependências...")
@@ -29,6 +30,10 @@ def install():
     
     print("\n✅ Tudo pronto! O ambiente está configurado.")
     print("Agora você pode rodar: !python main.py")
+    
+    # Cria flag de instalação
+    with open(".deps_installed.txt", "w") as f:
+        f.write("Instalacao concluida com sucesso.")
 
 if __name__ == "__main__":
     install()
