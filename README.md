@@ -150,7 +150,7 @@ O projeto opera com 3 "personas" de IA sequenciais:
 
 | **Visão Geral (Grid)** | **Detalhe (Drill-down)** |
 |:---:|:---:|
-| ![Catálogo - Tela Inicial](templates/template-screenshot.png) | ![Catálogo - Modal de Detalhes](templates/template-screenshot-click.png) |
+| ![Catálogo - Tela Inicial](main/templates/template-screenshot.png) | ![Catálogo - Modal de Detalhes](main/templates/template-screenshot-click.png) |
 <br>
 
 ### Adendo sobre captura de tela:
