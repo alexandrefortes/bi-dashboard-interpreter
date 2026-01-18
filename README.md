@@ -4,9 +4,9 @@
 
 *A visual-first cataloger for BI dashboards (UI automation + multimodal AI).*
 
-<video src="hello-world/Domando_o_Pântano_de_Dados.mp4" width="100%" controls>
-  Seu navegador não suporta o player de vídeo.
-</video>
+[![Demo do Projeto](hello-world/interface.png)](hello-world/Domando_o_Pântano_de_Dados.mp4)
+
+> *🎥 Clique na imagem acima para ver o vídeo de demonstração (MP4).*
 
 Este projeto utiliza IA Multimodal (Gemini 2.5 pro) e Automação de Navegador (Playwright) para navegar, capturar e documentar funcionalmente painéis de Business Intelligence (Power BI, etc.) automaticamente.
 
