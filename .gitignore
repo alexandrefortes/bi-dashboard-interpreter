@@ -214,3 +214,8 @@ main/urls_json_backups/
 hello-world/bin_*
 bi_catalog_report/
 main/bi_catalog_report/
+
+# Ignorar dados locais e sensíveis na pasta main
+main/.env
+main/runs_bkp/
+main/urls_old.json
