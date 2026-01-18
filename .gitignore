@@ -207,8 +207,10 @@ marimo/_lsp/
 __marimo__/
 
 # Custom
-runs/
-urls.json
-.deps_installed.txt
-/urls_json_backups
+main/runs/
+main/urls.json
+main/.deps_installed.txt
+main/urls_json_backups/
 hello-world/bin_*
+bi_catalog_report/
+main/bi_catalog_report/

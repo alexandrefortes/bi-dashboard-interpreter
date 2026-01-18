@@ -45,29 +45,28 @@ O código segue princípios de responsabilidade única:
 
 ## 🚀 Como rodar
 
-1. **Instale as dependências:**
+1. **Baixe o repositório e entre na pasta do projeto:**
+```bash
+git clone https://github.com/alexandrefortes/bi-dashboard-interpreter.git
+cd bi-dashboard-interpreter/main
+```
+
+2. **Instale as dependências:**
 ```bash
 python install_deps.py
 ```
 
 > **✨ Ou, conte com a Instalação Automática** 
-
+>
 > Ao executar a primeira célula do notebook `bi-dashboard-interpreter.ipynb` pela primeira vez, o sistema detecta se as dependências já foram instaladas. Se não, ele instala tudo automaticamente (incluindo o Playwright) sem você precisar abrir o terminal.
 >
 > ![Instalação Automática de Dependências](hello-world/instalacao_dependencias.png)
 
-2. **Configure o ambiente:**
-Crie um arquivo `.env` na raiz com sua chave:
+3. **Configure o ambiente:**
+Crie um arquivo `.env` dentro da pasta `main` com sua chave:
 ```env
 GEMINI_API_KEY="sua_chave_aqui"
 ```
-
-
-3. **Instale os navegadores:**
-```bash
-playwright install chromium
-```
-
 
 4. **Execute:**
 Gere o arquivo de URLs (via notebook `bi-dashboard-interpreter.ipynb` ou manualmente) e rode:
