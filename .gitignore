@@ -219,3 +219,6 @@ main/bi_catalog_report/
 main/.env
 main/runs_bkp/
 main/urls_old.json
+
+# Relatorios
+análise-esforço.md

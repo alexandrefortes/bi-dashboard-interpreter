@@ -4,7 +4,7 @@ from typing import Optional, List, Tuple, Dict, Any
 from playwright.async_api import async_playwright
 from PIL import Image
 from config import VIEWPORT
-from utils import setup_logger
+from utils import setup_logger, are_urls_equivalent
 
 logger = setup_logger("BotCore")
 
@@ -19,20 +19,59 @@ class BrowserDriver:
         self.browser = None
         self.context = None
         self.page = None
+        self.owns_context = False  # Flag para controlar se podemos fechar o contexto
 
-    async def start(self, headless: bool = True, browser_instance: Any = None) -> None:
-        """Inicia o Playwright (ou anexa a um browser existente)."""
+    async def start(self, headless: bool = True, browser_instance: Any = None, context_instance: Any = None) -> None:
+        """Inicia o Playwright (ou anexa a um browser/contexto existente)."""
+        
+        # 1. Se receber um CONTEXTO já pronto (Sessão Compartilhada)
+        if context_instance:
+            logger.info("♻️ Anexando a CONTEXTO compartilhado (Sessão Persistente)...")
+            self.context = context_instance
+            self.browser = context_instance.browser
+            self.owns_context = False  # NÃO podemos fechar contexto compartilhado!
+            # Cria apenas uma nova página dentro desse contexto (mantendo cookies)
+            self.page = await self.context.new_page()
+            return
+
+        # 2. Se receber um BROWSER (Sessão Isolada por Contexto)
         if browser_instance:
-            logger.info("Anexando a navegador compartilhado...")
+            logger.info("Anexando a navegador compartilhado (Novo Contexto)...")
             self.browser = browser_instance
             # Não iniciamos self.playwright aqui pois é gerenciado externamente
         else:
             self.playwright = await async_playwright().start()
             logger.info(f"Iniciando navegador dedicado (Headless: {headless})...")
-            self.browser = await self.playwright.chromium.launch(headless=headless)
+            
+            # Argumentos para tentar diminuir detecção de automação (evitar bloqueio Google)
+            launch_args = [
+                "--disable-blink-features=AutomationControlled",
+                "--no-sandbox",
+                "--disable-infobars"
+            ]
+            
+            # Tenta usar Chrome instalado no sistema para passar validações de "Secure Browser"
+            # O bundled Chromium é frequentemente bloqueado pelo Google Login.
+            try:
+                self.browser = await self.playwright.chromium.launch(
+                    headless=headless,
+                    channel="chrome", # Tenta usar Google Chrome instalado
+                    args=launch_args,
+                    ignore_default_args=["--enable-automation"]
+                )
+                logger.info("✅ Google Chrome (System) iniciado com sucesso.")
+            except Exception as e:
+                logger.warning(f"⚠️ Falha ao iniciar Chrome do sistema ({e}). Tentando Chromium bundled...")
+                self.browser = await self.playwright.chromium.launch(
+                    headless=headless,
+                    args=launch_args
+                )
         
-        # Cria contexto com Full HD forçado
-        self.context = await self.browser.new_context(viewport=VIEWPORT)
+        # Cria contexto com Full HD forçado e User Agent realístico
+        self.context = await self.browser.new_context(
+            viewport=VIEWPORT,
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        )
         self.page = await self.context.new_page()
 
     async def navigate_and_stabilize(self, url: str) -> bool:
@@ -44,24 +83,26 @@ class BrowserDriver:
             # 1. Tenta ir para a URL
             await self.page.goto(url, wait_until="domcontentloaded", timeout=60000)
             
-            # 2. Verifica se fomos redirecionados para Login da Microsoft/SSO
-            # URLs comuns de login: login.microsoftonline.com, accounts.google.com, etc.
-            current_url = self.page.url
-            if "login.microsoftonline" in current_url or "signin" in current_url or "oauth" in current_url:
-                logger.info("🛑 TELA DE LOGIN DETECTADA!")
-                logger.info("👉 Por favor, faça o login manualmente na janela do navegador.")
-                logger.info("⏳ O robô só vai continuar quando você estiver na URL correta, o link do primeiro painel do vetor de URLs (urls.json).")                
-
-                # Espera indefinidamente (timeout=0) até a URL voltar a ser do Power BI
-                # Só acorda se a URL atual contiver a URL alvo
-                await self.page.wait_for_url(
-                    lambda current_u: url.strip() in current_u, 
-                    timeout=0
-                )
+            # 2. Navegação Orientada ao Alvo (Robustez)
+            # Verifica se estamos na URL correta (mesmo path e params obrigatórios)
+            # Se não estiver, assume que é login/SSO/Check e espera o humano resolver.
+            
+            if not are_urls_equivalent(url, self.page.url):
+                logger.info("🛑 URL inicial difere do alvo (Login/SSO/Check detectado).")
+                logger.info("⏳ Aguardando você navegar até a URL correta...")
                 
-                logger.info("✅ Login e URL correta detectados! Retomando automação...")
-                # Pequena pausa para garantir que o redirecionamento pós-login terminou
-                await asyncio.sleep(5)
+                # Predicado para wait_for_url
+                # Nota: precisamos capturar 'url' do escopo externo
+                def is_target_url(current_u):
+                    return are_urls_equivalent(url, current_u)
+
+                # Espera indefinidamente (timeout=0) até a URL corresponder logicamente
+                await self.page.wait_for_url(is_target_url, timeout=0)
+                
+                logger.info("✅ URL correta alcançada! Retomando automação...")
+                # Pequena pausa para garantir renderização inicial pós-redirecionamento
+                await asyncio.sleep(2)
+
 
             # 3. Estabilização Padrão
             logger.info("Aguardando networkidle...")
@@ -133,6 +174,16 @@ class BrowserDriver:
 
     async def click_at_percentage(self, x_pct: float, y_pct: float) -> bool:
         """Clica na tela baseada em porcentagem da viewport."""
+        
+        # Validação defensiva: se coordenadas forem None ou inválidas, aborta
+        if x_pct is None or y_pct is None:
+            logger.error(f"❌ Coordenadas inválidas recebidas: x={x_pct}, y={y_pct}. Abortando clique.")
+            return False
+        
+        if not isinstance(x_pct, (int, float)) or not isinstance(y_pct, (int, float)):
+            logger.error(f"❌ Coordenadas não numéricas: x={type(x_pct)}, y={type(y_pct)}. Abortando clique.")
+            return False
+        
         width = VIEWPORT['width']
         height = VIEWPORT['height']
         
@@ -336,6 +387,14 @@ class BrowserDriver:
 
     async def close(self) -> None:
         """Fecha o navegador e libera recursos."""
+        # Se estamos usando contexto compartilhado, só fechamos a PÁGINA (tab)
+        # para não matar os outros workers
+        if not self.owns_context:
+            if self.page and not self.page.is_closed():
+                await self.page.close()
+            return
+        
+        # Se somos donos do contexto, fechamos tudo
         if self.context: 
             await self.context.close()
         
@@ -376,4 +435,79 @@ class BrowserDriver:
             
         except Exception as e:
             logger.warning(f"Erro fatal no clique nativo: {e}")
+            return False
+
+    async def get_databricks_tabs(self) -> List[Dict[str, Any]]:
+        """
+        Escaneia o DOM em busca de abas nativas do Databricks (role='tab').
+        Retorna lista de targets prontos para o Explorer.
+        """
+        logger.info("🕵️ Escaneando abas do Databricks via DOM...")
+        
+        # Script para extrair dados das abas
+        # Procura button[role='tab'] dentro de div[role='tablist']
+        # Retorna: Text, Selected (bool), Selector (id)
+        tabs_data = await self.page.evaluate("""() => {
+            const tabs = Array.from(document.querySelectorAll("div[role='tablist'] button[role='tab']"));
+            
+            return tabs.map(t => {
+                // Tenta pegar titulo do span interno ou do proprio botao ou title
+                let label = t.innerText || t.getAttribute('title') || 'Tab';
+                
+                // Limpa quebras de linha
+                label = label.replace(/[\\n\\r]+/g, ' ').trim();
+                
+                // Seletor único (ID é o melhor se existir)
+                let selector = '';
+                if (t.id) {
+                    selector = '#' + CSS.escape(t.id);
+                } else {
+                    // Fallback para atributo data-navigation-tab-id
+                    const navId = t.getAttribute('data-navigation-tab-id');
+                    if (navId) {
+                        selector = `button[data-navigation-tab-id="${CSS.escape(navId)}"]`;
+                    }
+                }
+
+                // Pega posições para fallback visual
+                const rect = t.getBoundingClientRect();
+                const x_pct = (rect.left + rect.width / 2) / window.innerWidth;
+                const y_pct = (rect.top + rect.height / 2) / window.innerHeight;
+
+                return {
+                    label: label,
+                    selector: selector,
+                    is_active: t.getAttribute('aria-selected') === 'true',
+                    x: x_pct,
+                    y: y_pct
+                };
+            });
+        }""")
+        
+        logger.info(f"Databricks: {len(tabs_data)} abas encontradas.")
+        
+        # Filtra abas válidas e formata para o padrão do sistema
+        targets = []
+        for t in tabs_data:
+            # Adiciona metadados extras para o clique preciso
+            targets.append({
+                "label": t['label'],
+                "x": t['x'], 
+                "y": t['y'],
+                "selector": t['selector'], # Explorer pode usar isso para clique direto!
+                "type": "databricks_tab"
+            })
+            
+        return targets
+
+    async def click_element(self, selector: str) -> bool:
+        """Clica em um elemento específico via Seletor CSS."""
+        try:
+            logger.info(f"Clicando via seletor: {selector}")
+            if not selector:
+                return False
+            await self.page.click(selector)
+            return True
+        except Exception as e:
+            logger.error(f"Erro ao clicar no seletor '{selector}': {e}")
             return False

@@ -3,6 +3,7 @@ import re
 import logging
 import imagehash
 from typing import Optional, List, Union, Tuple
+from urllib.parse import urlparse, parse_qs
 from PIL import Image
 from datetime import datetime
 from config import ROI_CROP
@@ -130,3 +131,60 @@ def is_error_screen(pil_image: Image.Image) -> bool:
 def clamp(value: float, min_val: float = 0, max_val: float = 1) -> float:
     """Restringe um valor entre min_val e max_val."""
     return max(min_val, min(max_val, value))
+
+def are_urls_equivalent(target_url: str, current_url: str) -> bool:
+    """
+    Verifica se duas URLs são equivalentes logicamente para fins de navegação.
+    
+    Critérios:
+    1. Mesmo Scheme e Netloc (domínio).
+    2. Mesmo Path.
+    3. Query Params: A URL atual deve conter TODOS os parâmetros da URL alvo com os mesmos valores.
+       Parâmetros extras na URL atual (ex: tokens de SSO, autoLogin) são ignorados.
+    """
+    if not target_url or not current_url:
+        return False
+        
+    try:
+        t_parsed = urlparse(target_url)
+        c_parsed = urlparse(current_url)
+        
+        # 1. Domínio (case insensitive)
+        if t_parsed.netloc.lower() != c_parsed.netloc.lower():
+            return False
+            
+        # 2. Path (exata)
+        # Normaliza trailing slash se necessário? Por enquanto exato.
+        if t_parsed.path != c_parsed.path:
+            return False
+            
+        # 3. Query Params
+        t_qs = parse_qs(t_parsed.query)
+        c_qs = parse_qs(c_parsed.query)
+        
+        # Verifica se todos os params do Alvo estão no Atual
+        for key, values in t_qs.items():
+            if key not in c_qs:
+                return False
+            
+            # Compara valores (listas)
+            # Geralmente parse_qs retorna lista. ['val'] deve bater com ['val']
+            # Mas se o SSO duplicar parameter? Ex: id=1 vira id=1 (ok)
+            # Vamos ser estritos: Os valores do target devem estar contidos no current?
+            # Ou exatos? Vamos assumir igualdade de conjunto de valores para a chave.
+            
+            t_vals = set(values)
+            c_vals = set(c_qs[key])
+            
+            # Se t_vals não for subset de c_vals, falha
+            # Ex: Target id=1 (t_vals={1}). Current id=1 (c_vals={1}). OK.
+            # Ex: Target id=1. Current id=2. Falha.
+            if not t_vals.issubset(c_vals):
+                return False
+                
+        return True
+        
+    except Exception as e:
+        import logging
+        logging.getLogger("Utils").error(f"Erro ao comparar URLs: {e}")
+        return False

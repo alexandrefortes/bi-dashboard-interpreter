@@ -15,9 +15,16 @@ from explorer import DashboardExplorer
 logger = setup_logger("Cataloger")
 
 class DashboardCataloger:
-    def __init__(self, shared_browser: Any = None, file_lock: Optional[asyncio.Lock] = None):
-        self.driver = BrowserDriver()
+    def __init__(self, driver: Optional[BrowserDriver] = None, shared_browser: Any = None, shared_context: Any = None, file_lock: Optional[asyncio.Lock] = None):
+        if driver:
+            self.driver = driver
+            self.owns_driver = False # Driver externo (sessão persistente)
+        else:
+            self.driver = BrowserDriver()
+            self.owns_driver = True # Driver próprio (sessão isolada)
+            
         self.shared_browser = shared_browser
+        self.shared_context = shared_context # Novo suporte a contexto
         self.file_lock = file_lock
         self.llm = GeminiService()
         self.processed_urls_file = Path(OUTPUT_DIR) / "processed_urls.json"
@@ -106,7 +113,15 @@ class DashboardCataloger:
             # Se não recuperou nav_data, roda o fluxo normal
             if not nav_data:
                 logger.info("Iniciando navegação (Browser)...")
-                await self.driver.start(headless=False, browser_instance=self.shared_browser)
+                
+                # Só inicia o driver se ele não estiver rodando ou se formos donos dele
+                if self.owns_driver or not self.driver.page:
+                    await self.driver.start(
+                        headless=False, 
+                        browser_instance=self.shared_browser,
+                        context_instance=self.shared_context # Prioridade na persistência
+                    )
+                
                 success = await self.driver.navigate_and_stabilize(url)
                 if not success:
                     logger.error("Falha ao carregar dashboard.")
@@ -132,6 +147,30 @@ class DashboardCataloger:
                 if "raw_response" in nav_data:
                     (wip_dir / "scout_audit_raw.txt").write_text(nav_data["raw_response"] or "", encoding="utf-8")
                     del nav_data["raw_response"]
+                
+                # --- CHECK DE VÁLIDADE (Dashboard vs Outros) ---
+                if not nav_data.get("is_dashboard", True): # Default True para compatibilidade antiga
+                    context = nav_data.get("page_context", "unknown")
+                    logger.warning(f"⚠️ Scout detectou NÃO ser um dashboard. Tipo: {context}. Abortando.")
+                    
+                    # Renomeia pasta para indicar ignorado
+                    # Formato: YYYYMMDD_HHMMSS_NO_DASHBOARD_login_screen
+                    # wip_dir name format: wip_{hash}
+                    # Final format: {run_id}_NO_DASHBOARD_{context}
+                    
+                    run_id = nav_data.get("_meta_run_id")
+                    ignored_name = f"{run_id}_NO_DASHBOARD_{sanitize_filename(context)}"
+                    ignored_dir = Path(OUTPUT_DIR) / ignored_name
+                    
+                    try:
+                        wip_dir.rename(ignored_dir)
+                        logger.info(f"Pasta renomeada para: {ignored_name}")
+                        # Vamos marcar como processado mas com status de erro no log_path
+                        await self._mark_as_processed(url, run_id, ignored_dir / "scout_checkpoint.json")
+                    except Exception as e:
+                        logger.error(f"Erro ao renomear pasta ignorada: {e}")
+                        
+                    return None
 
 
             # --- FASE 2: EXPLORER (Explorador) ---
@@ -159,7 +198,11 @@ class DashboardCataloger:
             if not pages_to_analyze:
                 # Garante driver aberto se não veio do fluxo anterior (ex: crashou após Scout)
                 if not self.driver.page: 
-                     await self.driver.start(headless=False, browser_instance=self.shared_browser)
+                     await self.driver.start(
+                         headless=False, 
+                         browser_instance=self.shared_browser,
+                         context_instance=self.shared_context
+                     )
                      # Precisamos re-navegar se o driver reiniciou? 
                      # Se já passamos do Scout, teoricamente sim, mas o Explorer precisa estar na página?
                      # O Explorer clica. Então SIM, precisa estar na página inicial.
@@ -173,6 +216,39 @@ class DashboardCataloger:
                 # Se for navegação de rodapé e tiver contador (ex: "1 de 4"),
                 # precisamos criar alvos adicionais para clicar N vezes.
                 nav_type = nav_data.get("nav_type", "default")
+                page_count_str = nav_data.get("page_count_visual")
+                
+                if nav_type == "native_footer" and page_count_str and targets:
+                    total_pages = parse_page_count(page_count_str)
+                    if total_pages and total_pages > 1:
+                        logger.info(f"📄 Rodapé nativo detectado: {total_pages} páginas. Expandindo alvos...")
+                        # O Scout retorna 1 alvo (botão Next). Precisamos clicar (Total - 1) vezes.
+                        # Ex: 4 páginas -> estamos na 1, faltam 3 cliques.
+                        clicks_needed = total_pages - 1
+                        
+                        base_target = targets[0] # Assume que o Scout só manda o botão Next
+                        expanded_targets = []
+                        for i in range(clicks_needed):
+                            t = base_target.copy()
+                            t["label"] = f"Next Page ({i+1}/{clicks_needed})"
+                            expanded_targets.append(t)
+                        
+                        targets = expanded_targets
+                        logger.info(f"🎯 Alvos expandidos para {len(targets)} cliques sequenciais.")
+                
+                # Prepara Home
+                nav_type = nav_data.get("nav_type", "default")
+                
+                # ENRIQUECIMENTO DOM (DATABRICKS)
+                if nav_type == "databricks_tabs":
+                     logger.info("🧱 Identificado Databricks. Substituindo targets do Scout por query DOM...")
+                     dom_targets = await self.driver.get_databricks_tabs()
+                     if dom_targets:
+                         targets = dom_targets
+                         logger.info(f"✅ Targets atualizados via DOM: {len(targets)} abas.")
+                     else:
+                         logger.warning("⚠️ Falha ao escanear DOM do Databricks. Mantendo targets visuais do Scout.")
+
                 page_count_str = nav_data.get("page_count_visual")
                 
                 if nav_type == "native_footer" and page_count_str and targets:
@@ -225,7 +301,8 @@ class DashboardCataloger:
             
             # --- FASE 3: ANALYST (Analista) ---
             # Pode rodar sem browser se tivermos as imagens carregadas
-            if self.driver.page: 
+            # OBS: Se formos donos do driver, podemos fechar. Se for externo, não fecha.
+            if self.owns_driver and self.driver.page: 
                 await self.driver.close() # Libera recurso antes da análise pesada
             
             logger.info(f"Iniciando análise detalhada de {len(pages_to_analyze)} páginas...")
@@ -301,4 +378,5 @@ class DashboardCataloger:
             logger.error(f"Erro crítico no processamento: {e}")
             raise # Propaga para ver o erro no console
         finally:
-            await self.driver.close()
+            if self.owns_driver:
+                await self.driver.close()

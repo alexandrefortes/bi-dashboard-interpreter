@@ -76,17 +76,27 @@ class GeminiService:
 
     def discover_navigation(self, image_bytes: bytes) -> Dict[str, Any]:
         """Estágio B: Identifica elementos de navegação com prioridade para paginação nativa."""
+        
         prompt = """
-        Analise esta captura de tela de um relatório Power BI.
-        Sua missão é identificar O PRINCIPAL método de navegação para acessar as diferentes páginas do relatório.
+        Analise esta captura de tela. Primeiro, determine o CONTEXTO da página.
+        Se for uma tela de Login, Portal de Arquivos, Erro, ou Site Institucional, marque "is_dashboard": false.
+        
+        Se for um Relatório/Dashboard de BI (Power BI, Tableau, Looker, Databricks SQL Dashboard, Qlik, ou Custom Web App de Dados):
+        1. Marque "is_dashboard": true.
+        2. Identifique O PRINCIPAL método de navegação para acessar as diferentes páginas do relatório.
 
-        Prioridade de Identificação (em ordem):
-        1. **Rodapé Nativo (Native Footer)**: Procure na parte INFERIOR por uma barra cinza estreita contendo texto como "1 of X", "1 de 4" ou setas de navegação (< >). 
+        Prioridade de Identificação de Navegação (apenas se is_dashboard=true):
+        1. **Rodapé Nativo PowerBI(Native Footer)**: Procure na parte INFERIOR por uma barra cinza estreita contendo texto como "1 of X", "1 de 4" ou setas de navegação (< >). 
            - Se existir, esse é o "nav_type": "native_footer".
            - O "target" deve ser APENAS a seta de "Próxima Página" (>).
+        
+        2. **Abas Databricks (Databricks Tabs)**: Procure no TOPO por abas de texto simples (ex: "Home", "Information") tipicamente alinhadas à esquerda, com estilo "clean".
+           - Se identificar aparência de Databricks SQL Dashboard.
+           - "nav_type": "databricks_tabs".
 
-        2. **Abas de Conteúdo (Custom Tabs)**: Se NÃO houver rodapé nativo, procure por botões ou abas desenhados dentro do relatório (topo ou lateral) que pareçam trocar a visão inteira.
-           - Tipos: "top_tabs", "left_list", "bottom_tabs".
+        3. **Abas de Conteúdo (Custom Tabs)**: Se NÃO houver rodapé nativo, procure por botões ou abas desenhados dentro do relatório (topo ou lateral) que pareçam trocar a visão inteira.
+        
+           - Tipos para "nav_type": "top_tabs", "left_list", "bottom_tabs".
            - Os "targets" são as coordenadas centrais de cada aba visível.
 
         Ignore filtros, slicers de data ou botões de "Voltar".
@@ -96,8 +106,10 @@ class GeminiService:
 
         Retorne estritamente JSON:
         {
-            "nav_reflection": "Sua justificativa e análise aqui. Por quê fez essas escolhas? Se encontrou outros métodos de navegação além do native_footer comente sobre eles.",
-            "nav_type": "native_footer" | "top_tabs" | "left_list" | "none",
+            "is_dashboard": true/false (Booleano, obrigatório),
+            "page_context": "dashboard" | "login_screen" | "file_portal" | "error_page" | "other_website",
+            "nav_reflection": "Sua justificativa e análise aqui. Primeiro justifique se é dashboard ou não. Se for, explique a navegação.",
+            "nav_type": "native_footer" | "databricks_tabs" | "top_tabs" | "left_list" | "bottom_tabs" | "none",
             "page_count_visual": "Texto exato visto indicando contagem (ex: '1 of 4') ou null",
             "targets": [
                 {"label": "Next Page Button" ou "Nome da Aba", "x": 0.0, "y": 0.0}
@@ -108,10 +120,15 @@ class GeminiService:
         scout_schema = {
             "type": "OBJECT",
             "properties": {
+                "is_dashboard": {"type": "BOOLEAN"},
+                "page_context": {
+                    "type": "STRING", 
+                    "enum": ["dashboard", "login_screen", "file_portal", "error_page", "other_website"]
+                },
                 "nav_reflection": {"type": "STRING"},
                 "nav_type": {
                     "type": "STRING",
-                    "enum": ["native_footer", "top_tabs", "left_list", "bottom_tabs", "none"]
+                    "enum": ["native_footer", "databricks_tabs", "top_tabs", "left_list", "bottom_tabs", "none"]
                 },
                 "page_count_visual": {"type": "STRING", "nullable": True},
                 "targets": {
@@ -127,7 +144,7 @@ class GeminiService:
                     }
                 }
             },
-            "required": ["nav_reflection", "nav_type", "targets"]
+            "required": ["is_dashboard", "page_context", "nav_reflection", "nav_type", "targets"]
         }
 
         json_text = self._call_gemini(
@@ -137,7 +154,13 @@ class GeminiService:
             response_schema=scout_schema
         )
         
-        base_result = {"nav_type": "none", "targets": [], "raw_response": json_text}
+        base_result = {
+            "is_dashboard": False, 
+            "page_context": "unknown",
+            "nav_type": "none", 
+            "targets": [], 
+            "raw_response": json_text
+        }
 
         if not json_text:
             return base_result

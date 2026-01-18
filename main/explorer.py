@@ -4,7 +4,7 @@ from pathlib import Path
 
 from config import VIEWPORT, CLICK_ATTEMPT_OFFSETS
 from utils import setup_logger, bytes_to_image, compute_phash
-from click_strategy import ConcentricSearchClicker, DOMFallbackClicker
+from click_strategy import ConcentricSearchClicker, DOMFallbackClicker, ClickResult
 
 logger = setup_logger("Explorer")
 
@@ -44,9 +44,50 @@ class DashboardExplorer:
         for i, target in enumerate(targets):
             logger.info(f"--- Explorando alvo {i+1}/{len(targets)}: {target.get('label')} ---")
 
-            # Lógica de Clique: DOM Primeiro para Nativo, Visual Primeiro para Customizado
+            # Validação: Se não tiver seletor E não tiver coordenadas válidas, pula
+            has_selector = bool(target.get("selector"))
+            
+            # Valida se x e y são números válidos (não None, não string, etc)
+            x_val = target.get('x')
+            y_val = target.get('y')
+            has_coords = (
+                isinstance(x_val, (int, float)) and 
+                isinstance(y_val, (int, float)) and
+                x_val is not None and 
+                y_val is not None
+            )
+            
+            if not has_selector and not has_coords:
+                logger.warning(f"⚠️ Target '{target.get('label')}' não tem seletor nem coordenadas válidas (x={x_val}, y={y_val}). Pulando.")
+                continue
+
+            # Lógica de Clique: DOM Direto (se fornecido), Nativo ou Visual
             result = None
-            if nav_type == "native_footer":
+            
+            # 0. Verifica se o target já fornece um seletor exato (Databricks Enrichment)
+            if target.get("selector"):
+                logger.info(f"🎯 Usando seletor DOM direto para '{target.get('label')}'...")
+                
+                # Clica
+                await self.driver.click_element(target['selector'])
+                await self.driver._wait_for_visual_stability(max_wait_seconds=15.0)
+                
+                # Valida se mudou
+                current_bytes = await self.driver.get_full_page_screenshot_bytes()
+                current_pil = bytes_to_image(current_bytes)
+                current_hash = compute_phash(current_pil, nav_type)
+                
+                # Verifica duplicidade
+                if current_hash in seen_hashes:
+                    logger.warning(f"⚠️ Página não mudou ou é duplicada (Hash: {current_hash}). Ignorando.")
+                    # Não adiciona aos seen_hashes se já existe
+                    continue 
+
+                # Sucesso
+                from click_strategy import ClickResult # Import local para evitar ciclo se necessario
+                result = ClickResult(success=True, screenshot_bytes=current_bytes, phash=current_hash)
+            
+            elif nav_type == "native_footer":
                 # TENTATIVA 1: Clique Nativo (DOM)
                 result = await self.dom_fallback.try_dom_click(seen_hashes, nav_type)
                 

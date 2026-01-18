@@ -106,11 +106,12 @@ Ao clicar, o sistema abre uma janela externa do **PowerShell** para rodar o rob�
 O robô foi desenhado para atuar em colaboração com o humano ("Human-in-the-loop") para operar em ambientes com SSO/MFA com participação do usuário autenticado.
 
 1. Ao iniciar, o robô abre o navegador.
-2. Se ele encontrar uma tela de login, o terminal exibirá: **`🛑 TELA DE LOGIN DETECTADA`**.
-3. **Sua vez:** Vá até a janela do navegador aberta, digite seu e-mail, senha e aprove o MFA no celular.
-4. Assim que o painel carregar, o robô detecta a mudança e retoma a automação sozinho.
+2. O robô verifica se a URL atual corresponde exatamente ao painel alvo.
+3. Se não corresponder (ex: redirecionou para Login, SSO, Check de Segurança ou URL com parâmetros diferentes), ele exibe: **`⏳ Aguardando você navegar até a URL correta...`**.
+4. **Sua vez:** Vá até a janela do navegador, faça login, passe por verificações ou ajuste a URL se necessário.
+5. Assim que o painel carregar (a URL bater com a esperada), o robô detecta automaticamente e inicia o trabalho.
 
-> **Dica:** Se após o login a URL mudar para algo não esperado (ex: /home), copie a primeira URL do vetor (urls.json) e cole na barra de endereços do navegador do robô. Ele detectará o carregamento e continuará.
+> **Dica:** O sistema é inteligente o suficiente para ignorar parâmetros "sujos" de SSO (ex: `autoLogin=true`) e diferenças na ordem dos parâmetros. Se a URL for logicamente a mesma, ele aceita.
 
 ## 🧠 Arquitetura dos Agentes
 
