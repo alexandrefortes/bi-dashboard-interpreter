@@ -211,3 +211,4 @@ runs/
 urls.json
 .deps_installed.txt
 /urls_json_backups
+hello-world/bin_*
