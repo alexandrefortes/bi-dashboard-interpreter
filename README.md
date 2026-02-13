@@ -4,9 +4,9 @@
 
 *A visual-first cataloger for BI dashboards (UI automation + multimodal AI).*
 
-![visual-first cataloger for BI dashboards](hello-world/cover.jpg)]
+![visual-first cataloger for BI dashboards](hello-world/cover.jpg)
 
-> *📺 **Assista ao vídeo de demonstração:** Domando o Pântano de Dashboards com Agentes de IA*
+> *📺 [**Assista ao vídeo: https://youtu.be/G-Q0dwxcF2k**](https://youtu.be/G-Q0dwxcF2k)*
 
 Este projeto utiliza IA Multimodal (Gemini 2.5 pro) e Automação de Navegador (Playwright) para navegar, capturar e documentar funcionalmente painéis de Business Intelligence (Power BI, etc.) automaticamente.
 
