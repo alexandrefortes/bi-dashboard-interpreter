@@ -4,7 +4,7 @@
 
 *A visual-first cataloger for BI dashboards (UI automation + multimodal AI).*
 
-[![Assista ao Vídeo: Domando o Pântano de Dashboards com Agentes de IA](hello-world/video.png)](https://youtu.be/G-Q0dwxcF2k)
+![visual-first cataloger for BI dashboards](hello-world/cover.jpg)]
 
 > *📺 **Assista ao vídeo de demonstração:** Domando o Pântano de Dashboards com Agentes de IA*
 
